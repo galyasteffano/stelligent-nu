@@ -1,0 +1,11 @@
+Resources:
+  LogicIdOfBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Ref: BucketName
+
+Parameters:
+  BucketName:
+    Type: String
+    Description: gimme a name
