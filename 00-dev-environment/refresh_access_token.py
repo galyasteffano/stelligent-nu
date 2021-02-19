@@ -6,9 +6,11 @@ from botocore.exceptions import ClientError
 
 """
 This script takes a profile and authenticator code to get a session token automatically.
-Usage "python3 refresh_access_token.py stelligent_labs 564469"
+Usage "python3 refresh_access_token.py MFA_TOKEN_VALUE"
+Usage if you have multiple mfa accounts (unimplemented) "python3 refresh_access_token.py USER_IAM_NAME USER_AWS_ACCOUNT INPUT_PROFILE_NAME MFA_TOKEN_VALUE"
 """
 
+# if you have more than 1 mfa account, these will need to be params as well. maybe store in a local config file for easier re-use!?
 USER_IAM_NAME = "josh.dix.labs"
 USER_AWS_ACCOUNT = "324320755747"
 USER_MFA_DEVICE_ARN = "arn:aws:iam::" + USER_AWS_ACCOUNT + ":mfa/" + USER_IAM_NAME
@@ -18,10 +20,10 @@ AWS_CRED_FILE_ACCESS_KEY_STRING = "aws_access_key_id"
 AWS_CRED_FILE_SECRET_KEY_STRING = "aws_secret_access_key"
 AWS_CRED_FILE_SESSION_TOKEN_STRING = "aws_session_token"
 
-INPUT_PROFILE_NAME = sys.argv[1]
+INPUT_PROFILE_NAME = "stelligent_labs"
 SESSION_PROFILE_SUFFIX = "_temp"
 SESSION_PROFILE_NAME = INPUT_PROFILE_NAME + SESSION_PROFILE_SUFFIX
-INPUT_MFA_CODE = sys.argv[2]
+INPUT_MFA_CODE = sys.argv[1]
 
 def program_failure(failure_message):
     print(failure_message)
@@ -44,9 +46,10 @@ def main():
         aws_cred_conf_parser[SESSION_PROFILE_NAME][AWS_CRED_FILE_ACCESS_KEY_STRING] = sts_response['Credentials']['AccessKeyId']
         aws_cred_conf_parser[SESSION_PROFILE_NAME][AWS_CRED_FILE_SECRET_KEY_STRING] = sts_response['Credentials']['SecretAccessKey']
         aws_cred_conf_parser[SESSION_PROFILE_NAME][AWS_CRED_FILE_SESSION_TOKEN_STRING] = sts_response['Credentials']['SessionToken']
-        
+
         with open(AWS_CREDENTIAL_FILE_LOCATION, 'w') as conf_file:
             aws_cred_conf_parser.write(conf_file)
+        print('Session profile (' + SESSION_PROFILE_NAME + ') created / updated successfully.')
     else:
         program_failure('Profile ' + INPUT_PROFILE_NAME + ' not found.\nPlease enter a valid profile.')
 
