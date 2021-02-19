@@ -1,0 +1,3 @@
+
+
+aws sts get-session-token --serial-number arn:aws:iam::324320755747:mfa/josh.dix.labs --token-code 875781
