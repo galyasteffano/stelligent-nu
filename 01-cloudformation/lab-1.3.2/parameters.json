@@ -1,8 +1,8 @@
 [
     {
-        "ParameterKey": "string",
-        "ParameterValue": "string",
+        "ParameterKey": "FriendlyName",
+        "ParameterValue": "friend-bob",
         "UsePreviousValue": false,
-        "ResolvedValue": "string"
+        "ResolvedValue": ""
     }
 ]

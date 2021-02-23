@@ -13,15 +13,17 @@ import sys
 
 import boto3
 import botocore
+from botocore.exceptions import ValidationError
 
-cf = boto3.client('cloudformation')  # pylint: disable=C0103
 log = logging.getLogger('deploy.cf.create_or_update')  # pylint: disable=C0103
 
 
-def main(stack_name, template, parameters):
+def deploy(stack_name, template, parameters, region, state):
     'Update or create stack'
 
-    template_data = _parse_template(template)
+    cf = boto3.client('cloudformation', region_name=region)  # pylint: disable=C0103
+
+    template_data = _parse_template(template, cf)
     parameter_data = _parse_parameters(parameters)
 
     params = {
@@ -31,31 +33,41 @@ def main(stack_name, template, parameters):
     }
 
     try:
-        if _stack_exists(stack_name):
-            print('Updating {}'.format(stack_name))
-            stack_result = cf.update_stack(**params)
-            waiter = cf.get_waiter('stack_update_complete')
-        else:
-            print('Creating {}'.format(stack_name))
-            stack_result = cf.create_stack(**params)
-            waiter = cf.get_waiter('stack_create_complete')
-        print("...waiting for stack to be ready...")
-        waiter.wait(StackName=stack_name)
+        assert( state == 'up' or state == 'down')
+    except ValidationError as e:
+        print('state must be up or down for gist.deploy')
+        raise(e)
+
+    try:
+        if state == 'up':
+            if _stack_exists(stack_name, cf):
+                print('Updating {}'.format(stack_name))
+                stack_result = cf.update_stack(**params)
+                waiter = cf.get_waiter('stack_update_complete')
+            else:
+                print('Creating {}'.format(stack_name))
+                stack_result = cf.create_stack(**params)
+                waiter = cf.get_waiter('stack_create_complete')
+            print("...waiting for stack to be ready...")
+            waiter.wait(StackName=stack_name)
+        if state == 'down':
+            if _stack_exists(stack_name, cf):
+                print('Deleting {}'.format(stack_name))
+                stack_result = cf.delete_stack(StackName=params['StackName'])
     except botocore.exceptions.ClientError as ex:
         error_message = ex.response['Error']['Message']
         if error_message == 'No updates are to be performed.':
             print("No changes")
         else:
             raise
-    else:
-        print(json.dumps(
-            cf.describe_stacks(StackName=stack_result['StackId']),
-            indent=2,
-            default=json_serial
-        ))
+    # else:
+    #     print(json.dumps(
+    #         cf.describe_stacks(StackName=stack_result['StackId']),
+    #         indent=2,
+    #         default=json_serial
+    #     ))
 
-
-def _parse_template(template):
+def _parse_template(template, cf):
     with open(template) as template_fileobj:
         template_data = template_fileobj.read()
     cf.validate_template(TemplateBody=template_data)
@@ -68,7 +80,7 @@ def _parse_parameters(parameters):
     return parameter_data
 
 
-def _stack_exists(stack_name):
+def _stack_exists(stack_name, cf):
     paginator = cf.get_paginator('list_stacks')
     for page in paginator.paginate():
         for stack in page['StackSummaries']:
@@ -88,4 +100,4 @@ def json_serial(obj):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    deploy(*sys.argv[1:])
