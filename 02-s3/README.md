@@ -119,22 +119,35 @@ Add an object to your bucket:
 
 ##### Question: Copying to Top Level
 
-_How would you copy the contents of the directory to the top level of your bucket?_
+_How would you copy the contents of the directory to the top level of your 
+bucket?_
+
+> my copy actually did that by default while using the recursive flag, so "s3 cp 
+dirname s3uri --recursive" did the trick
 
 ##### Question: Directory Copying
 
 _How would you copy the contents and include the directory name in the s3 object
 paths?_
 
+> include the folder name in the uri, so "s3 cp dirname s3uri/dirname 
+--recursive". Additionally, target the parent dir name without appending to 
+s3uri
+
 ##### Question: Object Access
 
 _[Can anyone else see your file yet](https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-access-control.html)?_
+
+> nope!
 
 For further reading, see the S3 [Access Policy Language Overview](https://docs.aws.amazon.com/AmazonS3/latest/dev/access-policy-language-overview.html).
 
 ##### Question: Sync vs Copy
 
 _What makes "sync" a better choice than "cp" for some S3 uploads?_
+
+> sync only copies if it detects changes in the file, saving bandwidth/time. also 
+is recursive by default.
 
 #### Lab 2.1.3: Exclude Private Objects When Uploading to a Bucket
 
@@ -150,6 +163,8 @@ bucket again **without including the private file**.
 
 Clean up: remove your bucket. What do you have to do before you can
 remove it?
+
+had to remove items (empty bucket), worked using "aws s3 rb --force ..."
 
 ### Retrospective 2.1
 
@@ -180,6 +195,8 @@ directory with the "aws s3 sync" command.
 _After this, can you download one of your files from the bucket without using
 your API credentials?_
 
+> no
+
 #### Lab 2.2.2: Use the CLI to Restrict Access to Private Data
 
 You just made "private.txt" publicly readable. Ensure that only the
@@ -191,11 +208,15 @@ permissions of the other files.
 _How could you use "aws s3 cp" or "aws s3 sync" command to modify the
 permissions on the file?_
 
+> both have an acl flag
+
 (Hint: see the list of [Canned ACLs](https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl).)
 
 ##### Question: Changing Permissions
 
 _Is there a way you can change the permissions on the file without re-uploading it?_
+
+> yes, put-object-acl works like a charm
 
 #### Lab 2.2.3: Using the API from the CLI
 
@@ -239,6 +260,9 @@ single template. To keep things simple, implement all of the permissions
 using a single bucket policy.
 
 When you're done, verify your access again.
+
+> this has the adverse effect of applying the authenticated read bucket wide, 
+which presumes that is a minimal permission for all new resources.
 
 ### Retrospective 2.2
 
