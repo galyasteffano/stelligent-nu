@@ -4,7 +4,7 @@ import os
 import boto3
 
 sys.path.append(os.path.dirname(__file__))
-import gist
+import gist # pyright: reportMissingImports=false
 
 """
 USAGE cf_by_boto.py <up|down>
