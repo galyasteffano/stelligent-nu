@@ -7,8 +7,7 @@ sys.path.append(os.path.dirname(__file__))
 import gist
 
 """
-USAGE deploy.py <UP|DOWN>
-FRIENDLY_NAME is a tag for buckets and stacks to relate to project.
+USAGE cf_by_boto.py <up|down>
 """
 
 JSON_REGIONS_FILE = "./01-cloudformation/lab-1.3.2/regions.json"
