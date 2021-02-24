@@ -319,9 +319,14 @@ Delete one of the objects that you changed.
 
 _Can you still retrieve old versions of the object you removed?_
 
+> yes
+
 ##### Question: Deleting All Versions
 
 _How would you delete all versions?_
+
+> delete all version as results from 's3api list-object-versions'. additionally,
+using python to clean a whole bucket with bucket.object_versions.delete()
 
 #### Lab 2.3.3: Tagging S3 Resources
 
@@ -335,6 +340,8 @@ _Can you change a single tag on a bucket or object, or do you have to change
 all its tags at once?_
 
 (See `aws:cloudformation:stack-id` and other AWS-managed tags.)
+
+> doesn't seem so!
 
 #### Lab 2.3.4: Object Lifecycles
 
@@ -356,6 +363,9 @@ _Management Lifecycle_ tab to double-check your settings.
 _Can you make any of these transitions more quickly?_
 
 *See the [S3 lifecycle transitions doc](https://docs.aws.amazon.com/AmazonS3/latest/dev/lifecycle-transition-general-considerations.html).*
+
+> I don't think so, these seem to be the minimum requirements before transition 
+is allowed
 
 ### Stretch Challenge
 
@@ -388,6 +398,8 @@ S3-managed key ("SSE-S3").
 ##### Question: Encrypting Existing Objects
 
 _Do you need to re-upload all your files to get them encrypted?_
+
+> yes
 
 #### Lab 2.4.2: SSE with KMS Keys
 
