@@ -168,6 +168,10 @@ stack's two roles in order to pass those values to the CLI function. You
 probably used the AWS web console to get the ARN for each role. What
 could you have done to your CFN template to make that unnecessary?_
 
+> Outputs only apply if you "create" some resource I would think...? That said, 
+if we were directed to create policies instead of using aws managed ones at that
+ point, that would make sense to output and import.
+
 #### Task: Stack Outputs
 
 Institute that change from the Question above. Recreate the stack as per

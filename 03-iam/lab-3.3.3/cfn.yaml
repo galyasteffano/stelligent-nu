@@ -1,0 +1,44 @@
+Resources:
+  MyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS:
+                - arn:aws:iam::324320755747:user/josh.dix.labs
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - Ref: MyCustomPolicy
+  MyCustomPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: "s3:*"
+            # Resource: "*"
+            Resource: !Join [ '', [ !GetAtt MyFirstBucket.Arn, "/lebowski/*" ] ]
+            Condition:
+              StringEquals:
+                's3:prefix': "lebowski/"
+          # - Effect: Allow
+          #   Action: "s3:List*"
+          #   Resource: !Join [ '', [ !GetAtt MyFirstBucket.Arn, "/*" ] ]
+          #   Condition:
+          #     StringLike:
+          #       's3:prefix': "lebowski/"
+          # - Effect: Allow
+          #   Action: "s3:Get*"
+          #   Resource: !Join [ '', [ !GetAtt MyFirstBucket.Arn, "/lebowski/*" ] ]
+          #   Condition:
+          #     StringLike:
+          #       's3:prefix': "lebowski/"
+  MyFirstBucket:
+    Type: AWS::S3::Bucket
+  MySecondBucket:
+    Type: AWS::S3::Bucket
