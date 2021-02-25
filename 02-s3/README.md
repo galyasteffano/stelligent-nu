@@ -464,9 +464,14 @@ _Can you use the alias when uploading files?_
 _After changing your bucket policy, can you upload files that aren't encrypted?
 If so, how would you require encryption on all files?_
 
+> https://aws.amazon.com/blogs/security/how-to-prevent-uploads-of-unencrypted-objects-to-amazon-s3/
+tl;dr: bucket policy requiring the setting of the encryption header
+
 #### Question: Multiple Keys
 
 _Can you use different keys for different objects?_
+
+> yes
 
 ## Further Reading
 

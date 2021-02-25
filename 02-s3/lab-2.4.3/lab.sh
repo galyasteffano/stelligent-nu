@@ -36,10 +36,10 @@ $aws_sl s3api get-object --bucket stelligent-u-josh-dix-labs --key data/private.
 
 $aws_sl s3 cp ./data s3://stelligent-u-josh-dix-labs/data/ --region us-west-2 --recursive --sse-kms-key-id arn:aws:kms:us-west-2:324320755747:key/90035765-7fa4-4702-b4e1-98615069bcaa --sse aws:kms
 
+# just repeated with alias usage
 $aws_sl s3 cp ./data s3://stelligent-u-josh-dix-labs/data/ --region us-west-2 --recursive --sse-kms-key-id alias/su-lab-2-4-3-jdix --sse aws:kms
 
 $aws_sl s3api get-object --bucket stelligent-u-josh-dix-labs --key data/private.txt /dev/null
-
 
 # python empty_bucket.py stelligent-u-josh-dix-labs
 # aws-sl cloudformation delete-stack --stack-name su-lab-2-4-3-jdix --region us-west-2
