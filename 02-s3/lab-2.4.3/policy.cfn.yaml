@@ -1,4 +1,26 @@
 Resources:
+  # MyKey:
+  #   Type: AWS::KMS::Key
+  #   Properties:
+  #     KeyPolicy:
+  #       Id: "an-id"
+  #       Statement:
+  #         Sid: "Allow use of the key"
+  #         Effect: "Allow"
+  #         Principal:
+  #           AWS: "arn:aws:iam::324320755747:user/josh.dix.labs"
+  #         Action:
+  #           - "kms:Encrypt"
+  #           - "kms:Decrypt"
+  #           - "kms:ReEncrypt"
+  #           - "kms:GenerateDataKey*"
+  #           - "kms:DescribeKey"
+  #         Resource: "*"
+  # MyKeyAlias:
+  #   Type: AWS::KMS::Alias
+  #   Properties:
+  #     AliasName: alias/MyKeyAliasName
+  #     TargetKeyId: !Ref MyKey
   MyBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -29,7 +51,7 @@ Resources:
         ServerSideEncryptionConfiguration:
           - BucketKeyEnabled: true
             ServerSideEncryptionByDefault:
-                SSEAlgorithm: 'aws:kms'
+                SSEAlgorithm: 'AES256'
   s3ReaderPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:

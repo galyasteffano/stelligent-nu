@@ -424,10 +424,18 @@ key.
 _Look through the [S3 encryption docs](https://docs.aws.amazon.com/AmazonS3/latest/dev/serv-side-encryption.html).
 What benefits might you gain by using a KMS key instead of an S3-managed key?_
 
+> the benefits are mostly that it is an added layer of security. you can manage 
+access to the key itself preventing a misconfigured bucket security policy from
+leaking plaintext data for instance.
+
 ##### Question: Customer Managed CMK
 
 _Going further, what benefits might you gain by using a KMS key you created
 yourself?_
+
+> aws docs don't actually provide a reason, but my guess is that this way you 
+can "ensure" the key was created and handled securely. This way if aws has any 
+internal leaks it would be less likely to effect you.
 
 #### Lab 2.4.3: Using Your Own KMS Key
 
