@@ -5,6 +5,8 @@ name = "pypi"
 
 [packages]
 boto3 = "*"
+pipfile = "*"
+pyyaml = "*"
 
 [dev-packages]
 

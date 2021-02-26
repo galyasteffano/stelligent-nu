@@ -1,0 +1,11 @@
+Resources:
+  LogicIdOfBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Join: [ "-", [ Ref: "AWS::AccountId", Ref: "AWS::Region", Ref: FriendlyName ] ]
+Parameters:
+  FriendlyName:
+    Default: a-friendly-name
+    Type: String
+    Description: add a useful name or you'll be embarassed
