@@ -7,13 +7,19 @@ $aws_sl cloudformation deploy --template-file cfn.yaml --stack-name lab-3-3-3-jd
 
 # aws-sl iam list-roles | grep jdix
 
-$aws_sl sts assume-role --role-arn <ROLE> --role-session-name su-lab-3-3-3-jdix
-
-# $ aws s3 cp lab.sh s3://lab-3-3-3-jdix-mysecondbucket-wjagutupkbms
-# upload failed: ./lab.sh to s3://lab-3-3-3-jdix-mysecondbucket-wjagutupkbms/lab.sh An error occurred (AccessDenied) when calling the PutObject operation: Access Denied
-# jdix@~/git_repos/stelligent-nu/03-iam/lab-3.3.2
-# $ aws s3 cp lab.sh s3://lab-3-3-3-jdix-myfirstbucket-7clcyx0z351q
-# upload: ./lab.sh to s3://lab-3-3-3-jdix-myfirstbucket-7clcyx0z351q/lab.sh
+$aws_sl sts assume-role --role-arn arn:aws:iam::324320755747:role/lab-3-3-3-jdix-MyRole-12G8YWX1YHNTH --role-session-name su-lab-3-3-3-jdix
+                                                                                                
+# lab-3-3-3-jdix-myfirstbucket-r5e3t2sqvi9k
 
 
+# stelligent-nu) Joshua.Dix@workmac lab-3.3.3 % aws s3api put-object --bucket lab-3-3-3-jdix-myfirstbucket-r5e3t2sqvi9k --key lebowski/lab.sh --body lab.sh
+# {
+#     "ETag": "\"db8d6aa35d98f14544ec77861ba7a46f\""
+# }
+# (stelligent-nu) Joshua.Dix@workmac lab-3.3.3 % aws s3api put-object --bucket lab-3-3-3-jdix-myfirstbucket-r5e3t2sqvi9k --key lab.sh --body lab.sh 
+
+# An error occurred (AccessDenied) when calling the PutObject operation: Access Denied
+# (stelligent-nu) Joshua.Dix@workmac lab-3.3.3 % 
+
+# https://aws.amazon.com/premiumsupport/knowledge-center/emr-s3-403-access-denied/
 $aws_sl cloudformation delete-stack --stack-name lab-3-3-3-jdix

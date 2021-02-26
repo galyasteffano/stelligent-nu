@@ -20,25 +20,26 @@ Resources:
         Version: "2012-10-17"
         Statement:
           - Effect: Allow
-            Action: "s3:*"
-            # Resource: "*"
-            Resource: !Join [ '', [ !GetAtt MyFirstBucket.Arn, "/lebowski/*" ] ]
+            Action: "s3:ListBucket"
+            Resource: !GetAtt MyFirstBucket.Arn
             Condition:
               StringEquals:
-                's3:prefix': "lebowski/"
-          # - Effect: Allow
-          #   Action: "s3:List*"
-          #   Resource: !Join [ '', [ !GetAtt MyFirstBucket.Arn, "/*" ] ]
-          #   Condition:
-          #     StringLike:
-          #       's3:prefix': "lebowski/"
-          # - Effect: Allow
-          #   Action: "s3:Get*"
-          #   Resource: !Join [ '', [ !GetAtt MyFirstBucket.Arn, "/lebowski/*" ] ]
-          #   Condition:
-          #     StringLike:
-          #       's3:prefix': "lebowski/"
+                's3:prefix':
+                  - ""
+                  - "lebowski/"
+                's3:delimiter':
+                  - '/'
+          - Effect: Allow
+            Action: "s3:ListBucket"
+            Resource: !GetAtt MyFirstBucket.Arn
+            Condition:
+              StringLike:
+                's3:prefix':
+                  - "lebowski/*"
+          - Effect: Allow
+            Action: "s3:*"
+            Resource:
+              - !Join [ '', [ !GetAtt MyFirstBucket.Arn, "/lebowski/*" ] ]
+              - !Join [ '', [ !GetAtt MyFirstBucket.Arn, "/lebowski*" ] ]
   MyFirstBucket:
-    Type: AWS::S3::Bucket
-  MySecondBucket:
     Type: AWS::S3::Bucket
