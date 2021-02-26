@@ -21,7 +21,7 @@
                 "sha256:27e9eb7d03ace9602777d0e808901812dfbb0c8c3e9454ab10e7ad1656a86a2d",
                 "sha256:58823abe27f3ab76761e6ba421ceed9f6011da2267d1622547efb358be507896"
             ],
-            "index": "pypi",
+https://github.com/jdix531/stelligent-nu/pull/4/conflict?name=Pipfile.lock&base_oid=4130e067fb93f833d0451ef6286be92be5a5598e&head_oid=272ab063754cd2670a21f13e7f5c25223a53dcda            "index": "pypi",
             "version": "==1.17.13"
         },
         "botocore": {

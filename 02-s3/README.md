@@ -119,22 +119,35 @@ Add an object to your bucket:
 
 ##### Question: Copying to Top Level
 
-_How would you copy the contents of the directory to the top level of your bucket?_
+_How would you copy the contents of the directory to the top level of your 
+bucket?_
+
+> my copy actually did that by default while using the recursive flag, so "s3 cp 
+dirname s3uri --recursive" did the trick
 
 ##### Question: Directory Copying
 
 _How would you copy the contents and include the directory name in the s3 object
 paths?_
 
+> include the folder name in the uri, so "s3 cp dirname s3uri/dirname 
+--recursive". Additionally, target the parent dir name without appending to 
+s3uri
+
 ##### Question: Object Access
 
 _[Can anyone else see your file yet](https://docs.aws.amazon.com/AmazonS3/latest/dev/s3-access-control.html)?_
+
+> nope!
 
 For further reading, see the S3 [Access Policy Language Overview](https://docs.aws.amazon.com/AmazonS3/latest/dev/access-policy-language-overview.html).
 
 ##### Question: Sync vs Copy
 
 _What makes "sync" a better choice than "cp" for some S3 uploads?_
+
+> sync only copies if it detects changes in the file, saving bandwidth/time. also 
+is recursive by default.
 
 #### Lab 2.1.3: Exclude Private Objects When Uploading to a Bucket
 
@@ -150,6 +163,8 @@ bucket again **without including the private file**.
 
 Clean up: remove your bucket. What do you have to do before you can
 remove it?
+
+had to remove items (empty bucket), worked using "aws s3 rb --force ..."
 
 ### Retrospective 2.1
 
@@ -180,6 +195,8 @@ directory with the "aws s3 sync" command.
 _After this, can you download one of your files from the bucket without using
 your API credentials?_
 
+> no
+
 #### Lab 2.2.2: Use the CLI to Restrict Access to Private Data
 
 You just made "private.txt" publicly readable. Ensure that only the
@@ -191,11 +208,15 @@ permissions of the other files.
 _How could you use "aws s3 cp" or "aws s3 sync" command to modify the
 permissions on the file?_
 
+> both have an acl flag
+
 (Hint: see the list of [Canned ACLs](https://docs.aws.amazon.com/AmazonS3/latest/dev/acl-overview.html#canned-acl).)
 
 ##### Question: Changing Permissions
 
 _Is there a way you can change the permissions on the file without re-uploading it?_
+
+> yes, put-object-acl works like a charm
 
 #### Lab 2.2.3: Using the API from the CLI
 
@@ -239,6 +260,9 @@ single template. To keep things simple, implement all of the permissions
 using a single bucket policy.
 
 When you're done, verify your access again.
+
+> this has the adverse effect of applying the authenticated read bucket wide, 
+which presumes that is a minimal permission for all new resources.
 
 ### Retrospective 2.2
 
@@ -295,9 +319,14 @@ Delete one of the objects that you changed.
 
 _Can you still retrieve old versions of the object you removed?_
 
+> yes
+
 ##### Question: Deleting All Versions
 
 _How would you delete all versions?_
+
+> delete all version as results from 's3api list-object-versions'. additionally,
+using python to clean a whole bucket with bucket.object_versions.delete()
 
 #### Lab 2.3.3: Tagging S3 Resources
 
@@ -311,6 +340,8 @@ _Can you change a single tag on a bucket or object, or do you have to change
 all its tags at once?_
 
 (See `aws:cloudformation:stack-id` and other AWS-managed tags.)
+
+> doesn't seem so!
 
 #### Lab 2.3.4: Object Lifecycles
 
@@ -332,6 +363,9 @@ _Management Lifecycle_ tab to double-check your settings.
 _Can you make any of these transitions more quickly?_
 
 *See the [S3 lifecycle transitions doc](https://docs.aws.amazon.com/AmazonS3/latest/dev/lifecycle-transition-general-considerations.html).*
+
+> I don't think so, these seem to be the minimum requirements before transition 
+is allowed
 
 ### Stretch Challenge
 
@@ -365,6 +399,8 @@ S3-managed key ("SSE-S3").
 
 _Do you need to re-upload all your files to get them encrypted?_
 
+> yes
+
 #### Lab 2.4.2: SSE with KMS Keys
 
 Change your bucket policy to require KMS encryption for all objects.
@@ -388,10 +424,18 @@ key.
 _Look through the [S3 encryption docs](https://docs.aws.amazon.com/AmazonS3/latest/dev/serv-side-encryption.html).
 What benefits might you gain by using a KMS key instead of an S3-managed key?_
 
+> the benefits are mostly that it is an added layer of security. you can manage 
+access to the key itself preventing a misconfigured bucket security policy from
+leaking plaintext data for instance.
+
 ##### Question: Customer Managed CMK
 
 _Going further, what benefits might you gain by using a KMS key you created
 yourself?_
+
+> aws docs don't actually provide a reason, but my guess is that this way you 
+can "ensure" the key was created and handled securely. This way if aws has any 
+internal leaks it would be less likely to effect you.
 
 #### Lab 2.4.3: Using Your Own KMS Key
 
@@ -420,9 +464,14 @@ _Can you use the alias when uploading files?_
 _After changing your bucket policy, can you upload files that aren't encrypted?
 If so, how would you require encryption on all files?_
 
+> https://aws.amazon.com/blogs/security/how-to-prevent-uploads-of-unencrypted-objects-to-amazon-s3/
+tl;dr: bucket policy requiring the setting of the encryption header
+
 #### Question: Multiple Keys
 
 _Can you use different keys for different objects?_
+
+> yes
 
 ## Further Reading
 

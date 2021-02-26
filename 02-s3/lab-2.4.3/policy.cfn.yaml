@@ -1,0 +1,92 @@
+Resources:
+  # MyKey:
+  #   Type: AWS::KMS::Key
+  #   Properties:
+  #     KeyPolicy:
+  #       Id: "an-id"
+  #       Statement:
+  #         Sid: "Allow use of the key"
+  #         Effect: "Allow"
+  #         Principal:
+  #           AWS: "arn:aws:iam::324320755747:user/josh.dix.labs"
+  #         Action:
+  #           - "kms:Encrypt"
+  #           - "kms:Decrypt"
+  #           - "kms:ReEncrypt"
+  #           - "kms:GenerateDataKey*"
+  #           - "kms:DescribeKey"
+  #         Resource: "*"
+  # MyKeyAlias:
+  #   Type: AWS::KMS::Alias
+  #   Properties:
+  #     AliasName: alias/MyKeyAliasName
+  #     TargetKeyId: !Ref MyKey
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: stelligent-u-josh-dix-labs
+      AccessControl: "AuthenticatedRead"
+      VersioningConfiguration:
+        Status: Enabled
+      LifecycleConfiguration:
+        Rules:
+          - Status: Enabled
+            Id: 30-day-ia
+            Transitions:
+              - StorageClass: STANDARD_IA
+                TransitionInDays: 30
+          - Status: Enabled
+            Id: 90-day-glacier
+            Transitions:
+              - StorageClass: GLACIER
+                TransitionInDays: 90
+          - Status: Enabled
+            Id: 7-day-old-version-trim
+            NoncurrentVersionExpirationInDays: 7
+          - Status: Enabled
+            Id: 1-day-upload-abort-trim
+            AbortIncompleteMultipartUpload:
+                DaysAfterInitiation: 1
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - BucketKeyEnabled: true
+            ServerSideEncryptionByDefault:
+                SSEAlgorithm: 'AES256'
+  s3ReaderPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: s3_reader_user_lab_2_2_3_jdix
+      Path: '/'
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:ListBucket
+          Resource: 'arn:aws:s3:::stelligent-u-josh-dix-labs'
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource: 'arn:aws:s3:::stelligent-u-josh-dix-labs/*'
+      Users:
+        - josh.dix.labs
+  MyBucketPolicy:
+    Type: 'AWS::S3::BucketPolicy'
+    Properties:
+      Bucket: stelligent-u-josh-dix-labs
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            NotResource: !Join
+              - ''
+              - - 'arn:aws:s3:::'
+                - stelligent-u-josh-dix-labs
+                - /data/private.txt
+            Principal: '*'
+
+# allow with acl, deny with resource filter?
+# add deny to public* principals on specific resource
