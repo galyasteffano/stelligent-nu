@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "keyName",
+        "ParameterValue": "josh.dix.labs.keypair"
+    },
+    {
+        "ParameterKey": "AmiId",
+        "ParameterValue": "ami-09246ddb00c7c4fef"
+    },
+    {
+        "ParameterKey": "InstanceType",
+        "ParameterValue": "t2.micro"
+    }
+]

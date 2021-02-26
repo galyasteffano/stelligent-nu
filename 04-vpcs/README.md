@@ -133,10 +133,15 @@ Launch an EC2 instance into your VPC.
 
 _After you launch your new stack, can you ssh to the instance?_
 
+> no
+
 ##### Question: Verify Connectivity
 
 _Is there a way that you can verify Internet connectivity from the instance
 without ssh'ing to it?_
+
+> ping, if it was allowed, but neither are at this point. without modifying the 
+sg, i don't think there's a way at this point.
 
 #### Lab 4.1.5: Security Group
 
@@ -147,6 +152,8 @@ Add a security group to your EC2 stack:
 ##### Question: Connectivity
 
 _Can you ssh to your instance yet?_
+
+> yes!
 
 #### Lab 4.1.6: Elastic IP
 
@@ -164,9 +171,13 @@ reachable from anywhere outside your VPC.
 
 _Can you ping your instance now?_
 
+> yes, since 4.1.5
+
 ##### Question: SSH
 
 _Can you ssh into your instance now?_
+
+> yes, since 4.1.5
 
 ##### Question: Traffic
 

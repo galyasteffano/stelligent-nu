@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "5b87ab5367b8b99ddfd67c8328d69a775de1a5870e77e5e16673a6744325c8d1"
+            "sha256": "a736e561774cda4f9238c7d5de19aed385e05aab09bb4f144c427a4b3f8791eb"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -16,21 +16,42 @@
         ]
     },
     "default": {
+        "awacs": {
+            "hashes": [
+                "sha256:a23e4f45093970013464cde5c3950c2ccb048cf97b7f21e354c638362ee38cf1"
+            ],
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
+            "version": "==1.0.2"
+        },
         "boto3": {
             "hashes": [
-                "sha256:27e9eb7d03ace9602777d0e808901812dfbb0c8c3e9454ab10e7ad1656a86a2d",
-                "sha256:58823abe27f3ab76761e6ba421ceed9f6011da2267d1622547efb358be507896"
+                "sha256:602eadaef665f49090344e0f87aa6a98dbe1ccdd2f20069a372ed35f2706c63c",
+                "sha256:7d52ae25baeef79151147c729051a790b7a8b3858a126d59c9ab957815a6d4e7"
             ],
-https://github.com/jdix531/stelligent-nu/pull/4/conflict?name=Pipfile.lock&base_oid=4130e067fb93f833d0451ef6286be92be5a5598e&head_oid=272ab063754cd2670a21f13e7f5c25223a53dcda            "index": "pypi",
-            "version": "==1.17.13"
+            "index": "pypi",
+            "version": "==1.17.16"
         },
         "botocore": {
             "hashes": [
-                "sha256:84d44036b1c174d4973c58387acefd851e71fed3ae8cc818b76b817556b59156",
-                "sha256:9ae7785f8d5150b720a4b5ddde7b4b4da447da1d084375fc5de61f8b0ae46023"
+                "sha256:48350c0524fafcc6f1cf792a80080eeaf282c4ceed016e9296f1ebfda7c34fb3",
+                "sha256:dd95871cf8a418ab730a219f2bfc301c98f2d9d0a294e43f51715bdd4aedd4cd"
             ],
             "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4, 3.5'",
-            "version": "==1.20.13"
+            "version": "==1.20.16"
+        },
+        "cfn-flip": {
+            "hashes": [
+                "sha256:2bed32a1f4dca26dc64178d52511fd4ef778b5ccbcf32559cac884ace75bde6a"
+            ],
+            "version": "==1.2.3"
+        },
+        "click": {
+            "hashes": [
+                "sha256:d2b5255c7c6349bc1bd1e59e08cd12acbbd63ce649f2588755783aa94dfb6b1a",
+                "sha256:dacca89f4bfadd5de3d7489b7c8a566eee0d3676333fbb50030263894c38c0dc"
+            ],
+            "markers": "python_version >= '2.7' and python_version not in '3.0, 3.1, 3.2, 3.3, 3.4'",
+            "version": "==7.1.2"
         },
         "jmespath": {
             "hashes": [
@@ -104,6 +125,16 @@ https://github.com/jdix531/stelligent-nu/pull/4/conflict?name=Pipfile.lock&base_
             ],
             "markers": "python_version >= '2.6' and python_version not in '3.0, 3.1, 3.2, 3.3'",
             "version": "==0.10.2"
+        },
+        "troposphere": {
+            "extras": [
+                "policy"
+            ],
+            "hashes": [
+                "sha256:0f1607910ea545906131c820ef629a82a57f087cb99ac573bf9dfcdc1e64e11a"
+            ],
+            "index": "pypi",
+            "version": "==2.6.3"
         },
         "urllib3": {
             "hashes": [

@@ -1,0 +1,11 @@
+
+[
+    {
+        "ParameterKey": "vpcCidrParam",
+        "ParameterValue": "10.10.0.0/16"
+    },
+    {
+        "ParameterKey": "subnetCidrParam",
+        "ParameterValue": "10.10.0.0/24"
+    }
+]

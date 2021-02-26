@@ -1,0 +1,94 @@
+Outputs:
+  SubnetId:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: SubnetId-jdix
+    Value: !Ref 'Subnet'
+  VpcId:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: VpcId-jdix
+    Value: !Ref 'Vpc'
+Parameters:
+  subnetCidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  vpcCidrParam:
+    Description: string of vpc cidr block to use
+    Type: String
+Resources:
+  Igw:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  RouteTable:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblSubnetAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  Subnet:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetCidrParam'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'Igw'
+      RouteTableId: !Ref 'RouteTable'
+    Type: AWS::EC2::Route
