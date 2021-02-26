@@ -109,15 +109,21 @@ authorized to in the labs account. These tokens will last approximately
   AWS MFA credentials from Option 1.
 1. Try to reduce the amount of manual input as much as possible.
 
+> ***See refresh_access_token.py***
+
 ###### Question 0.1.1: 1
 
 What method did you use to store the aws credentials?  What are some other
 options?
+> I used the credentials file. Environment variables or aws vault is also
+available for workstations. Otherwise, there's roles that can be attached to
+instances.
 
 ###### Question 0.1.1: 2
 
 Which AWS environment variable cannot be set in order to run the
 `aws sts get-session-token` command?
+> ***The AWS_SESSION_TOKEN variable***
 
 ##### Option 2: Using AWS Vault to automatically handle your temporary tokens
 
@@ -195,6 +201,9 @@ results. What does this tell you about the access the keys give you on
 your laptop and the access you have in the Cloud9 environment? What
 other methods are there to provide this level of access without using
 keys?_
+
+> The keys are created with the same level of access. I could also create a role
+with the same access as my user and apply it to the cloud 9 instance.
 
 #### Task
 
