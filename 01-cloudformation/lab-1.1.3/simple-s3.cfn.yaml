@@ -1,0 +1,6 @@
+Resources:
+  LogicIdOfBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName:
+        Fn::Join: [ "-", [ Ref: "AWS::AccountId", 1-1-3 ] ]

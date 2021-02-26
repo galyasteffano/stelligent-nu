@@ -160,18 +160,29 @@ name.
 
 _Why do we prefer the YAML format for CFN templates?_
 
+> Easier to read and more dense
+
 #### Question: Protecting Resources
 
 _What else can you do to prevent resources in a stack from being deleted?_
 
 See [DeletionPolicy](https://aws.amazon.com/premiumsupport/knowledge-center/cloudformation-accidental-updates/).
 
+> Deletion policies and stack policies prevent deletion/updating at the resource
+ / stack:resource level respectively.
+
 _How is that different from applying Termination Protection?_
+
+> termination protection is "all or nothing" and still allows updating any
+resource. It simply prevents the full removal of a stack
 
 #### Task: String Substitution
 
 Demonstrate 2 ways to code string combination/substitution using
 built-in CFN functions.
+
+> This is done in the labs, does it need to be done again? Lab 1.1.5 uses
+conditionals and join for instance.
 
 ## Lesson 1.2: Integration with Other AWS Resources
 
@@ -226,6 +237,9 @@ the Managed Policy ARN created by and exported from the previous Stack.
 Delete your CFN stacks in the same order you created them in. Did you
 succeed? If not, describe how you would _identify_ the problem, and
 resolve it yourself.
+
+> No, I was able to identify by using the stack status reason for the deletion-
+attempted-stack stating this stack used by another stack.
 
 ### Retrospective 1.2
 

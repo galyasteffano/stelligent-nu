@@ -1,0 +1,22 @@
+Resources:
+  s3ReaderPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: s3_reader_user_lab_1_2_1_jdix
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:ListAllMyBuckets
+          Resource: '*'
+      Users:
+        - Ref: s3User
+  s3User:
+    Type: AWS::IAM::User
+    Properties:
+      Path: "/"
+      UserName: "s3_reader_user_lab_1_2_1_jdix"
+      # Policies:
+      # - PolicyDocument: Ref: s3ReaderPolicy
