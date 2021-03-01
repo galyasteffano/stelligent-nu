@@ -59,6 +59,24 @@ Resources:
       IpProtocol: icmp
       ToPort: -1
     Type: AWS::EC2::SecurityGroupIngress
+  MyPrivInstance:
+    Properties:
+      ImageId: !Ref 'AmiId'
+      InstanceType: !Ref 'InstanceType'
+      KeyName: !Ref 'keyName'
+      SecurityGroupIds:
+        - !Ref 'MySg'
+      SubnetId: !ImportValue 'PrivSubnetId-jdix'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+    Type: AWS::EC2::Instance
   MySg:
     Properties:
       GroupDescription: who cares

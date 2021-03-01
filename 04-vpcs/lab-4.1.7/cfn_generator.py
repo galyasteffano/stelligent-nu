@@ -12,7 +12,7 @@ resource_tags=Tags(
                     stelligent_u_lab='lab-1'
                 )
 
-
+# "vpc stack"
 def dump_base_yaml(cfn_file):
 
     template=Template()
@@ -91,6 +91,57 @@ def dump_base_yaml(cfn_file):
         )
     )
 
+    priv_route_tbl=template.add_resource(
+        ec2.RouteTable(
+            "PrivRouteTable",
+            VpcId=Ref(vpc),
+            Tags=resource_tags,
+        )
+    )
+
+    priv_subnet=template.add_resource(
+        ec2.Subnet(
+            "PrivSubnet",
+            VpcId=Ref(vpc),
+            CidrBlock="10.10.1.0/24",
+            MapPublicIpOnLaunch=False,
+            AvailabilityZone=Select(0, GetAZs()),
+            Tags=resource_tags,
+        )
+    )
+
+    route_tbl_asoc=template.add_resource(
+        ec2.SubnetRouteTableAssociation(
+            "RouteTblPrivSubnetAsoc",
+            RouteTableId=Ref(priv_route_tbl),
+            SubnetId=Ref(priv_subnet)
+        )
+    )
+
+    ngw_elastic_ip = template.add_resource(
+        ec2.EIP(
+            "MyNgwEip",
+            Tags=resource_tags,
+        )
+    )
+
+    nat_gateway = template.add_resource(
+        ec2.NatGateway(
+            "MyNatGateway",
+            AllocationId=GetAtt(ngw_elastic_ip, "AllocationId"),
+            SubnetId=Ref(subnet),
+        )
+    )
+
+    private_out_route=template.add_resource(
+        ec2.Route(
+            "privateOutRoute",
+            DestinationCidrBlock="0.0.0.0/0",
+            NatGatewayId=Ref(nat_gateway),
+            RouteTableId=Ref(priv_route_tbl)
+        )
+    )
+
     template.add_output([
         Output(
             "VpcId",
@@ -104,9 +155,16 @@ def dump_base_yaml(cfn_file):
             Value=Ref(subnet),
             Export=Export("SubnetId-jdix"),
         ),
+        Output(
+            "PrivSubnetId",
+            Description="InstanceId of the newly created EC2 instance",
+            Value=Ref(priv_subnet),
+            Export=Export("PrivSubnetId-jdix"),
+        ),
     ])
     template_out_yaml(cfn_file, template)
 
+# "instance stack"
 def dump_lab_yaml(cfn_file):
 
     template=Template()
@@ -172,7 +230,19 @@ def dump_lab_yaml(cfn_file):
         )
     )
 
-    elastic_ip = template.add_resource(
+    priv_instance = template.add_resource(
+        ec2.Instance(
+            "MyPrivInstance",
+            ImageId=Ref(ami_id_param),
+            SubnetId=ImportValue("PrivSubnetId-jdix"),
+            InstanceType=Ref(instance_type_param),
+            KeyName=Ref(key_name_param),
+            Tags=resource_tags,
+            SecurityGroupIds=[Ref(sg)],
+        )
+    )
+
+    instance_elastic_ip = template.add_resource(
         ec2.EIP(
             "MyEip",
             InstanceId=Ref(instance),

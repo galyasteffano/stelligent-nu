@@ -11,3 +11,4 @@ __pycache__
 
 .ruby-version
 josh.dix.labs.keypair.pem
+josh.dix.labs.mac.keypair.pem

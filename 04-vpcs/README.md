@@ -171,13 +171,13 @@ reachable from anywhere outside your VPC.
 
 _Can you ping your instance now?_
 
-> yes, since 4.1.5
+> yes, since 4.1.5, now with a static ip
 
 ##### Question: SSH
 
 _Can you ssh into your instance now?_
 
-> yes, since 4.1.5
+> yes, since 4.1.5, now with a static ip
 
 ##### Question: Traffic
 
@@ -185,6 +185,8 @@ _If you can ssh, can you send any traffic (e.g. curl) out to the Internet?_
 
 At this point, you've made your public EC2 instance an [ssh bastion](https://docs.aws.amazon.com/quickstart/latest/linux-bastion/architecture.html).
 We'll make use of that to explore your network below.
+
+> yes, since 4.1.5, now with a static ip
 
 #### Lab 4.1.7: NAT Gateway
 
@@ -211,19 +213,28 @@ existing instance stack.
 
 _Can you find a way to ssh to this instance?_
 
+> yes
+
 ##### Question: Egress
 
 _If you can ssh to it, can you send traffic out?_
+
+> yes
 
 ##### Question: Deleting the Gateway
 
 _If you delete the NAT gateway, what happens to the ssh session on your private
 instance?_
 
+> fine, only using nat gateway to route out for priv subnet
+
 ##### Question: Recreating the Gateway
 
 _If you recreate the NAT gateway and detach the Elastic IP from the public EC2
 instance, can you still reach the instance from the outside?_
+
+> yes, we just change the ip we're using and it isn't an eip (which stays
+> constant)
 
 Test it out with the AWS console.
 
