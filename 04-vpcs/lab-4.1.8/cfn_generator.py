@@ -9,7 +9,7 @@ resource_tags=Tags(
                     Name=Sub("${AWS::StackName}"),
                     user="josh.dix.labs",
                     stelligent_u_lesson='lesson-4-1',
-                    stelligent_u_lab='lab-7'
+                    stelligent_u_lab='lab-1'
                 )
 
 # "vpc stack"
@@ -139,6 +139,158 @@ def dump_base_yaml(cfn_file):
             DestinationCidrBlock="0.0.0.0/0",
             NatGatewayId=Ref(nat_gateway),
             RouteTableId=Ref(priv_route_tbl)
+        )
+    )
+
+    first_network_acl = template.add_resource(
+        ec2.NetworkAcl(
+            "MyFirstNetAcl",
+            Tags=resource_tags,
+            VpcId=Ref(vpc),
+        )
+    )
+
+    network_out_second_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPrivOutNetAclEntry",
+            NetworkAclId=Ref(first_network_acl),
+            CidrBlock="0.0.0.0/0",
+            Protocol=-1,
+            Egress=True,
+            RuleAction="allow",
+            RuleNumber=100,
+        )
+    )
+
+    network_inbound_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyInNetAclEntry",
+            NetworkAclId=Ref(first_network_acl),
+            CidrBlock="74.77.86.69/32",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=100,
+            PortRange=ec2.PortRange(From=22, To=22)
+        )
+    )
+
+    private_to_public_client_ports_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPriv2PubClientPortsNetAclEntry",
+            NetworkAclId=Ref(first_network_acl),
+            CidrBlock="10.10.1.0/24",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=101,
+            PortRange=ec2.PortRange(From=1024, To=65535)
+        )
+    )
+
+    public_to_internet_client_ports_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPub2DefaultClientPortsNetAclEntry",
+            NetworkAclId=Ref(first_network_acl),
+            CidrBlock="0.0.0.0/0",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=102,
+            PortRange=ec2.PortRange(From=1024, To=65535)
+        )
+    )
+
+    public_to_private_icmpv4_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPubIcmpv4NetAclEntry",
+            NetworkAclId=Ref(first_network_acl),
+            CidrBlock="10.10.1.0/24",
+            Protocol=1,
+            Icmp=ec2.ICMP(Code=-1, Type=-1),
+            RuleAction="allow",
+            RuleNumber=103
+        )
+    )
+
+    second_network_acl = template.add_resource(
+        ec2.NetworkAcl(
+            "MySecondNetAcl",
+            Tags=resource_tags,
+            VpcId=Ref(vpc),
+        )
+    )
+
+    network_out_second_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPriv2InternetClientPortsNetAclEntry",
+            NetworkAclId=Ref(second_network_acl),
+            CidrBlock="0.0.0.0/0",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=100,
+            PortRange=ec2.PortRange(From=1024, To=65535)
+        )
+    )
+
+    public_to_private_ssh_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPrivSshNetAclEntry",
+            NetworkAclId=Ref(second_network_acl),
+            CidrBlock="10.10.0.0/24",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=101,
+            PortRange=ec2.PortRange(From=22, To=22)
+        )
+    )
+
+    public_to_private_http_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPrivHttpNetAclEntry",
+            NetworkAclId=Ref(second_network_acl),
+            CidrBlock="10.10.0.0/24",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=102,
+            PortRange=ec2.PortRange(From=80, To=80)
+        )
+    )
+
+    private_to_public_icmpv4_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPrivIcmpv4NetAclEntry",
+            NetworkAclId=Ref(second_network_acl),
+            CidrBlock="10.10.0.0/24",
+            Protocol=1,
+            Icmp=ec2.ICMP(Code=-1, Type=-1),
+            RuleAction="allow",
+            RuleNumber=103
+        )
+    )
+
+    network_out_second_acl_entry = template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyPubOutNetAclEntry",
+            NetworkAclId=Ref(second_network_acl),
+            CidrBlock="0.0.0.0/0",
+            Protocol=-1,
+            Egress=True,
+            RuleAction="allow",
+            RuleNumber=100,
+        )
+    )
+
+    subnet_nacl_asociation = template.add_resource(
+        ec2.SubnetNetworkAclAssociation(
+            "subNaclAsoc",
+            NetworkAclId=Ref(first_network_acl),
+            SubnetId=Ref(subnet)
+        )
+    )
+
+    priv_subnet_nacl_asociation = template.add_resource(
+        ec2.SubnetNetworkAclAssociation(
+            "privSubNaclAsoc",
+            NetworkAclId=Ref(second_network_acl),
+            SubnetId=Ref(priv_subnet)
         )
     )
 

@@ -27,7 +27,7 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName}'
         - Key: stelligent_u_lab
-          Value: lab-7
+          Value: lab-1
         - Key: stelligent_u_lesson
           Value: lesson-4-1
         - Key: user
@@ -45,7 +45,7 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName}'
         - Key: stelligent_u_lab
-          Value: lab-7
+          Value: lab-1
         - Key: stelligent_u_lesson
           Value: lesson-4-1
         - Key: user
@@ -71,7 +71,7 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName}'
         - Key: stelligent_u_lab
-          Value: lab-7
+          Value: lab-1
         - Key: stelligent_u_lesson
           Value: lesson-4-1
         - Key: user
@@ -84,7 +84,7 @@ Resources:
         - Key: Name
           Value: !Sub '${AWS::StackName}'
         - Key: stelligent_u_lab
-          Value: lab-7
+          Value: lab-1
         - Key: stelligent_u_lesson
           Value: lesson-4-1
         - Key: user

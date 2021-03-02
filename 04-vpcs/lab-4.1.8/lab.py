@@ -16,7 +16,7 @@ allows the optional use of parameter files laid out as:
 """
 
 region = 'us-east-2'
-state = 'down'
+state = 'up'
 # state = sys.argv[1]
 os.environ['AWS_PROFILE'] = 'stelligent_labs_temp'
 
@@ -24,13 +24,13 @@ os.environ['AWS_PROFILE'] = 'stelligent_labs_temp'
 
 stacks_in_order = [
     {
-        "stack_name": 'base-lab-4-1-7',
+        "stack_name": 'base-lab-4-1-8',
         "stack_yaml": 'cfn-base.yaml',
         "stack_params": 'cidr_params.json',
         "stack_func": cfn_generator.dump_base_yaml
     },
     {
-        "stack_name": 'lab-4-1-7',
+        "stack_name": 'lab-4-1-8',
         "stack_yaml": 'cfn-lab.yaml',
         "stack_params": 'instance_params.json',
         "stack_func": cfn_generator.dump_lab_yaml
