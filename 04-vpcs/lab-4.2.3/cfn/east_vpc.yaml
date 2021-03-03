@@ -146,12 +146,6 @@ Resources:
       GatewayId: !Ref 'Igw'
       RouteTableId: !Ref 'RouteTable'
     Type: AWS::EC2::Route
-  peerRoute:
-    Properties:
-      DestinationCidrBlock: !Ref 'westPeerCidrParam'
-      RouteTableId: !Ref 'RouteTable'
-      VpcPeeringConnectionId: pcx-0d27f0252e6c8ac93
-    Type: AWS::EC2::Route
   subNaclAsoc:
     Properties:
       NetworkAclId: !Ref 'MyFirstNetAcl'

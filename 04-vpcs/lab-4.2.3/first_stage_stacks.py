@@ -83,14 +83,15 @@ def east_vpc_stack(cfn_file):
     )
 
 # stage 3: delete me and update to remove peering stack
-    peer_route=template.add_resource(
-        ec2.Route(
-            "peerRoute",
-            DestinationCidrBlock=Ref(west_peer_cidr_param),
-            VpcPeeringConnectionId="pcx-0d27f0252e6c8ac93",
-            RouteTableId=Ref(route_tbl)
-        )
-    )
+    # peer_route=template.add_resource(
+    #     ec2.Route(
+    #         "peerRoute",
+    #         DestinationCidrBlock=Ref(west_peer_cidr_param),
+    #         VpcPeeringConnectionId="pcx-0d27f0252e6c8ac93",
+    #         RouteTableId=Ref(route_tbl)
+    #     )
+    # )
+# /stage3
 
     subnet=template.add_resource(
         ec2.Subnet(
@@ -349,14 +350,14 @@ def west_vpc_stack(cfn_file):
     )
 
 # stage 3: delete me and update to remove peering stack
-    peer_route=template.add_resource(
-        ec2.Route(
-            "peerRoute",
-            DestinationCidrBlock=Ref(east_peer_cidr_param),
-            VpcPeeringConnectionId="pcx-0d27f0252e6c8ac93",
-            RouteTableId=Ref(route_tbl)
-        )
-    )
+    # peer_route=template.add_resource(
+    #     ec2.Route(
+    #         "peerRoute",
+    #         DestinationCidrBlock=Ref(east_peer_cidr_param),
+    #         VpcPeeringConnectionId="pcx-0d27f0252e6c8ac93",
+    #         RouteTableId=Ref(route_tbl)
+    #     )
+    # )
 
 # /stage3
 
@@ -400,112 +401,112 @@ def west_vpc_stack(cfn_file):
     )
 
 
-# stage 4: vpc endpoint connection
-    s3_bucket=template.add_resource(
-        s3.Bucket(
-            "MyBucketForServiceConnection",
-            BucketName="bucket-for-service-connection-lab-4-2-3-jdix"
-        )
-    )
+# # stage 4: vpc endpoint connection
+#     s3_bucket=template.add_resource(
+#         s3.Bucket(
+#             "MyBucketForServiceConnection",
+#             BucketName="bucket-for-service-connection-lab-4-2-3-jdix"
+#         )
+#     )
 
-    vpc_endpoint=template.add_resource(
-        ec2.VPCEndpoint(
-            "MyVpcS3Endpoint",
-            VpcId=Ref(vpc),
-            ServiceName="com.amazonaws.us-west-2.s3",
-            RouteTableIds=[Ref(route_tbl)],
-            PolicyDocument={
-                "Statement": [
-                    {
-                        "Principal": "*",
-                        "Action": "*",
-                        "Effect": "Allow",
-                        "Resource": [
-                            Join("", ["arn:aws:s3:::", Ref(s3_bucket)]),
-                            Join("", ["arn:aws:s3:::", Ref(s3_bucket), '/*'])
-                        ],
-                    }
-                ]
-            }	
-        )
-    )
+#     vpc_endpoint=template.add_resource(
+#         ec2.VPCEndpoint(
+#             "MyVpcS3Endpoint",
+#             VpcId=Ref(vpc),
+#             ServiceName="com.amazonaws.us-west-2.s3",
+#             RouteTableIds=[Ref(route_tbl)],
+#             PolicyDocument={
+#                 "Statement": [
+#                     {
+#                         "Principal": "*",
+#                         "Action": "*",
+#                         "Effect": "Allow",
+#                         "Resource": [
+#                             Join("", ["arn:aws:s3:::", Ref(s3_bucket)]),
+#                             Join("", ["arn:aws:s3:::", Ref(s3_bucket), '/*'])
+#                         ],
+#                     }
+#                 ]
+#             }	
+#         )
+#     )
 
 # endpoint acls
-    template.add_resource(
-        ec2.NetworkAclEntry(
-            "MyS3ClientPortsNetAclEntry1",
-            NetworkAclId=Ref(my_net_acl),
-            CidrBlock="3.5.76.0/22",
-            Protocol=6,
-            RuleAction="allow",
-            RuleNumber=102,
-            PortRange=ec2.PortRange(From=1024, To=65535)
-        )
-    )
-    template.add_resource(
-        ec2.NetworkAclEntry(
-            "MyS3ClientPortsNetAclEntry2",
-            NetworkAclId=Ref(my_net_acl),
-            CidrBlock="3.5.80.0/21",
-            Protocol=6,
-            RuleAction="allow",
-            RuleNumber=103,
-            PortRange=ec2.PortRange(From=1024, To=65535)
-        )
-    )
-    template.add_resource(
-        ec2.NetworkAclEntry(
-            "MyS3ClientPortsNetAclEntry3",
-            NetworkAclId=Ref(my_net_acl),
-            CidrBlock="52.218.128.0/17",
-            Protocol=6,
-            RuleAction="allow",
-            RuleNumber=104,
-            PortRange=ec2.PortRange(From=1024, To=65535)
-        )
-    )
-    template.add_resource(
-        ec2.NetworkAclEntry(
-            "MyS3ClientPortsNetAclEntry4",
-            NetworkAclId=Ref(my_net_acl),
-            CidrBlock="52.92.128.0/17",
-            Protocol=6,
-            RuleAction="allow",
-            RuleNumber=105,
-            PortRange=ec2.PortRange(From=1024, To=65535)
-        )
-    )
+    # template.add_resource(
+    #     ec2.NetworkAclEntry(
+    #         "MyS3ClientPortsNetAclEntry1",
+    #         NetworkAclId=Ref(my_net_acl),
+    #         CidrBlock="3.5.76.0/22",
+    #         Protocol=6,
+    #         RuleAction="allow",
+    #         RuleNumber=102,
+    #         PortRange=ec2.PortRange(From=1024, To=65535)
+    #     )
+    # )
+    # template.add_resource(
+    #     ec2.NetworkAclEntry(
+    #         "MyS3ClientPortsNetAclEntry2",
+    #         NetworkAclId=Ref(my_net_acl),
+    #         CidrBlock="3.5.80.0/21",
+    #         Protocol=6,
+    #         RuleAction="allow",
+    #         RuleNumber=103,
+    #         PortRange=ec2.PortRange(From=1024, To=65535)
+    #     )
+    # )
+    # template.add_resource(
+    #     ec2.NetworkAclEntry(
+    #         "MyS3ClientPortsNetAclEntry3",
+    #         NetworkAclId=Ref(my_net_acl),
+    #         CidrBlock="52.218.128.0/17",
+    #         Protocol=6,
+    #         RuleAction="allow",
+    #         RuleNumber=104,
+    #         PortRange=ec2.PortRange(From=1024, To=65535)
+    #     )
+    # )
+    # template.add_resource(
+    #     ec2.NetworkAclEntry(
+    #         "MyS3ClientPortsNetAclEntry4",
+    #         NetworkAclId=Ref(my_net_acl),
+    #         CidrBlock="52.92.128.0/17",
+    #         Protocol=6,
+    #         RuleAction="allow",
+    #         RuleNumber=105,
+    #         PortRange=ec2.PortRange(From=1024, To=65535)
+    #     )
+    # )
 
 
 # bucket policy
-    template.add_resource(
-        s3.BucketPolicy(
-            "bucketPolicyForVpcEndpoint",
-            Bucket=Ref(s3_bucket),
-            PolicyDocument={
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Action": "*",
-                        "Principal": "*",
-                        "Resource": [
-                            Join("", ["arn:aws:s3:::", Ref(s3_bucket)]),
-                            Join("", ["arn:aws:s3:::", Ref(s3_bucket), '/*'])
-                        ],
-                        "Effect": "Allow",
-                        "Condition": {
-                            "StringEquals": {
-                                "aws:SourceVpce": Ref(vpc_endpoint)
-                            },
-                            "StringEquals": {
-                                "aws:SourceVpc": Ref(vpc)
-                            }
-                        }
-                    }
-                ]
-            }
-        )
-    )
+    # template.add_resource(
+    #     s3.BucketPolicy(
+    #         "bucketPolicyForVpcEndpoint",
+    #         Bucket=Ref(s3_bucket),
+    #         PolicyDocument={
+    #             "Version": "2012-10-17",
+    #             "Statement": [
+    #                 {
+    #                     "Action": "*",
+    #                     "Principal": "*",
+    #                     "Resource": [
+    #                         Join("", ["arn:aws:s3:::", Ref(s3_bucket)]),
+    #                         Join("", ["arn:aws:s3:::", Ref(s3_bucket), '/*'])
+    #                     ],
+    #                     "Effect": "Allow",
+    #                     "Condition": {
+    #                         "StringEquals": {
+    #                             "aws:SourceVpce": Ref(vpc_endpoint)
+    #                         },
+    #                         "StringEquals": {
+    #                             "aws:SourceVpc": Ref(vpc)
+    #                         }
+    #                     }
+    #                 }
+    #             ]
+    #         }
+    #     )
+    # )
 
 # endpoint policy
 

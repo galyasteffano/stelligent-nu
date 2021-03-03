@@ -18,7 +18,7 @@ aws-sl ssm get-parameters --names /aws/service/ami-amazon-linux-latest/amzn2-ami
 
 """
 
-state = 'up'
+state = 'down'
 # state = sys.argv[1]
 os.environ['AWS_PROFILE'] = 'stelligent_labs_temp'
 
