@@ -16,7 +16,7 @@ allows the optional use of parameter files laid out as:
 """
 
 region = 'us-east-2'
-state = 'up'
+state = 'down'
 # state = sys.argv[1]
 os.environ['AWS_PROFILE'] = 'stelligent_labs_temp'
 
