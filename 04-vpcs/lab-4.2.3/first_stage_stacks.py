@@ -2,8 +2,9 @@ import os
 # prevents bools showing up as strings
 os.environ['TROPO_REAL_BOOL']='true'
 
-from troposphere import Export, GetAtt, Ref, Template, Tags, Sub, Select, GetAZs, Parameter, Output, ImportValue
+from troposphere import Export, GetAtt, Ref, Template, Tags, Sub, Select, GetAZs, Parameter, Output, ImportValue, Join
 import troposphere.ec2 as ec2
+import troposphere.s3 as s3
 
 resource_tags=Tags(
                     Name=Sub("${AWS::StackName}"),
@@ -81,7 +82,7 @@ def east_vpc_stack(cfn_file):
         )
     )
 
-# delete me and update to remove peering stack
+# stage 3: delete me and update to remove peering stack
     peer_route=template.add_resource(
         ec2.Route(
             "peerRoute",
@@ -347,7 +348,7 @@ def west_vpc_stack(cfn_file):
         )
     )
 
-# delete me and update to remove peering stack
+# stage 3: delete me and update to remove peering stack
     peer_route=template.add_resource(
         ec2.Route(
             "peerRoute",
@@ -357,6 +358,7 @@ def west_vpc_stack(cfn_file):
         )
     )
 
+# /stage3
 
     my_net_acl = template.add_resource(
         ec2.NetworkAcl(
@@ -396,6 +398,121 @@ def west_vpc_stack(cfn_file):
             SubnetId=Ref(subnet)
         )
     )
+
+
+# stage 4: vpc endpoint connection
+    s3_bucket=template.add_resource(
+        s3.Bucket(
+            "MyBucketForServiceConnection",
+            BucketName="bucket-for-service-connection-lab-4-2-3-jdix"
+        )
+    )
+
+    vpc_endpoint=template.add_resource(
+        ec2.VPCEndpoint(
+            "MyVpcS3Endpoint",
+            VpcId=Ref(vpc),
+            ServiceName="com.amazonaws.us-west-2.s3",
+            RouteTableIds=[Ref(route_tbl)],
+            PolicyDocument={
+                "Statement": [
+                    {
+                        "Principal": "*",
+                        "Action": "*",
+                        "Effect": "Allow",
+                        "Resource": [
+                            Join("", ["arn:aws:s3:::", Ref(s3_bucket)]),
+                            Join("", ["arn:aws:s3:::", Ref(s3_bucket), '/*'])
+                        ],
+                    }
+                ]
+            }	
+        )
+    )
+
+# endpoint acls
+    template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyS3ClientPortsNetAclEntry1",
+            NetworkAclId=Ref(my_net_acl),
+            CidrBlock="3.5.76.0/22",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=102,
+            PortRange=ec2.PortRange(From=1024, To=65535)
+        )
+    )
+    template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyS3ClientPortsNetAclEntry2",
+            NetworkAclId=Ref(my_net_acl),
+            CidrBlock="3.5.80.0/21",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=103,
+            PortRange=ec2.PortRange(From=1024, To=65535)
+        )
+    )
+    template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyS3ClientPortsNetAclEntry3",
+            NetworkAclId=Ref(my_net_acl),
+            CidrBlock="52.218.128.0/17",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=104,
+            PortRange=ec2.PortRange(From=1024, To=65535)
+        )
+    )
+    template.add_resource(
+        ec2.NetworkAclEntry(
+            "MyS3ClientPortsNetAclEntry4",
+            NetworkAclId=Ref(my_net_acl),
+            CidrBlock="52.92.128.0/17",
+            Protocol=6,
+            RuleAction="allow",
+            RuleNumber=105,
+            PortRange=ec2.PortRange(From=1024, To=65535)
+        )
+    )
+
+
+# bucket policy
+    template.add_resource(
+        s3.BucketPolicy(
+            "bucketPolicyForVpcEndpoint",
+            Bucket=Ref(s3_bucket),
+            PolicyDocument={
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Action": "*",
+                        "Principal": "*",
+                        "Resource": [
+                            Join("", ["arn:aws:s3:::", Ref(s3_bucket)]),
+                            Join("", ["arn:aws:s3:::", Ref(s3_bucket), '/*'])
+                        ],
+                        "Effect": "Allow",
+                        "Condition": {
+                            "StringEquals": {
+                                "aws:SourceVpce": Ref(vpc_endpoint)
+                            },
+                            "StringEquals": {
+                                "aws:SourceVpc": Ref(vpc)
+                            }
+                        }
+                    }
+                ]
+            }
+        )
+    )
+
+# endpoint policy
+
+
+# /stage4
+
+
 
     template.add_output([
         Output(

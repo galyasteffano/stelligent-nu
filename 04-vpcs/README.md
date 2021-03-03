@@ -322,12 +322,16 @@ Elastic IP.
 
 _Can you ping this instance from the public instance you created earlier?_
 
+> yes
+
 ##### Question: Private to Public
 
 _Can you ping your public instance from this private instance? Which IPs are
 reachable, the public instance's private IP or its public IP, or both?_
 
 Use traceroute to see where traffic flows to both the public and private IPs.
+
+> just the private, there's no default route on its route table
 
 #### Lab 4.2.3: VPC Endpoint Gateway to S3
 
@@ -368,6 +372,8 @@ you to learn._
 #### Question: Corporate Networks
 
 _How would you integrate your VPC with a corporate network?_
+
+> endpoints are a good way to make sure service traffic only flows through private networks
 
 ## Further Reading
 

@@ -28,6 +28,10 @@ Resources:
       RuleAction: allow
       RuleNumber: 100
     Type: AWS::EC2::NetworkAclEntry
+  MyBucketForServiceConnection:
+    Properties:
+      BucketName: bucket-for-service-connection-lab-4-2-3-jdix
+    Type: AWS::S3::Bucket
   MyFirstNetAcl:
     Properties:
       Tags:
@@ -49,6 +53,72 @@ Resources:
       RuleAction: allow
       RuleNumber: 101
     Type: AWS::EC2::NetworkAclEntry
+  MyS3ClientPortsNetAclEntry1:
+    Properties:
+      CidrBlock: 3.5.76.0/22
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 102
+    Type: AWS::EC2::NetworkAclEntry
+  MyS3ClientPortsNetAclEntry2:
+    Properties:
+      CidrBlock: 3.5.80.0/21
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 103
+    Type: AWS::EC2::NetworkAclEntry
+  MyS3ClientPortsNetAclEntry3:
+    Properties:
+      CidrBlock: 52.218.128.0/17
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 104
+    Type: AWS::EC2::NetworkAclEntry
+  MyS3ClientPortsNetAclEntry4:
+    Properties:
+      CidrBlock: 52.92.128.0/17
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 105
+    Type: AWS::EC2::NetworkAclEntry
+  MyVpcS3Endpoint:
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action: '*'
+            Effect: Allow
+            Principal: '*'
+            Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref 'MyBucketForServiceConnection'
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref 'MyBucketForServiceConnection'
+                  - /*
+      RouteTableIds:
+        - !Ref 'RouteTable'
+      ServiceName: com.amazonaws.us-west-2.s3
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCEndpoint
   RouteTable:
     Properties:
       Tags:
@@ -101,6 +171,29 @@ Resources:
         - Key: user
           Value: josh.dix.labs
     Type: AWS::EC2::VPC
+  bucketPolicyForVpcEndpoint:
+    Properties:
+      Bucket: !Ref 'MyBucketForServiceConnection'
+      PolicyDocument:
+        Statement:
+          - Action: '*'
+            Condition:
+              StringEquals:
+                aws:SourceVpc: !Ref 'Vpc'
+            Effect: Allow
+            Principal: '*'
+            Resource:
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref 'MyBucketForServiceConnection'
+              - !Join
+                - ''
+                - - 'arn:aws:s3:::'
+                  - !Ref 'MyBucketForServiceConnection'
+                  - /*
+        Version: '2012-10-17'
+    Type: AWS::S3::BucketPolicy
   peerRoute:
     Properties:
       DestinationCidrBlock: !Ref 'eastPeerCidrParam'
