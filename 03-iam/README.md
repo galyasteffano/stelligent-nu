@@ -168,6 +168,10 @@ stack's two roles in order to pass those values to the CLI function. You
 probably used the AWS web console to get the ARN for each role. What
 could you have done to your CFN template to make that unnecessary?_
 
+> Outputs only apply if you "create" some resource I would think...? That said, 
+if we were directed to create policies instead of using aws managed ones at that
+ point, that would make sense to output and import.
+
 #### Task: Stack Outputs
 
 Institute that change from the Question above. Recreate the stack as per
@@ -356,6 +360,9 @@ tests]](https://smartbear.com/learn/automated-testing/negative-testing/)
 that could be automated in order to confirm the permissions for the
 Role?_
 
+> i did not test folder operations that might not be desired, such as deleting 
+> the prefix itself.
+
 #### Task: Positive and Negative Tests
 
 Code at least one new positive and one new negative test.
@@ -366,10 +373,14 @@ _Is it possible to limit uploads of objects with a specific prefix (e.g.
 starting with "lebowski/") to an S3 bucket using IAM conditions? If not, how else
 could this be accomplished?_
 
+> not that i can tell
+
 #### Task: Limiting Uploads
 
 Research and review the best method to limit uploads with a specific prefix to
 an S3 bucket.
+
+> app level metrics?
 
 ## Further Reading
 

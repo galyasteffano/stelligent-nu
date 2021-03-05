@@ -1,0 +1,103 @@
+Resources:
+  MyRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+  MySecondRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+  MyPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: rename-test-lab-3-1-3-jdix-IAMReadOnly
+      Description: "shared managed policy lab-3-1-3"
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: 
+              - 'iam:GetPolicyVersion'
+              - 'iam:GetAccountPasswordPolicy'
+              - 'iam:ListRoleTags'
+              - 'iam:ListServerCertificates'
+              - 'iam:GenerateServiceLastAccessedDetails'
+              - 'iam:ListServiceSpecificCredentials'
+              - 'iam:ListSigningCertificates'
+              - 'iam:ListVirtualMFADevices'
+              - 'iam:ListSSHPublicKeys'
+              - 'iam:SimulateCustomPolicy'
+              - 'iam:SimulatePrincipalPolicy'
+              - 'iam:ListAttachedRolePolicies'
+              - 'iam:ListOpenIDConnectProviderTags'
+              - 'iam:ListSAMLProviderTags'
+              - 'iam:ListRolePolicies'
+              - 'iam:GetAccountAuthorizationDetails'
+              - 'iam:GetCredentialReport'
+              - 'iam:ListPolicies'
+              - 'iam:GetServerCertificate'
+              - 'iam:GetRole'
+              - 'iam:ListSAMLProviders'
+              - 'iam:GetPolicy'
+              - 'iam:GetAccessKeyLastUsed'
+              - 'iam:ListEntitiesForPolicy'
+              - 'iam:GetUserPolicy'
+              - 'iam:ListGroupsForUser'
+              - 'iam:GetGroupPolicy'
+              - 'iam:GetOpenIDConnectProvider'
+              - 'iam:GetRolePolicy'
+              - 'iam:GetAccountSummary'
+              - 'iam:GenerateCredentialReport'
+              - 'iam:GetServiceLastAccessedDetailsWithEntities'
+              - 'iam:ListPoliciesGrantingServiceAccess'
+              - 'iam:ListInstanceProfileTags'
+              - 'iam:ListMFADevices'
+              - 'iam:GetServiceLastAccessedDetails'
+              - 'iam:GetGroup'
+              - 'iam:GetContextKeysForPrincipalPolicy'
+              - 'iam:GetOrganizationsAccessReport'
+              - 'iam:GetServiceLinkedRoleDeletionStatus'
+              - 'iam:ListInstanceProfilesForRole'
+              - 'iam:GenerateOrganizationsAccessReport'
+              - 'iam:ListAttachedUserPolicies'
+              - 'iam:ListAttachedGroupPolicies'
+              - 'iam:ListPolicyTags'
+              - 'iam:GetSAMLProvider'
+              - 'iam:ListAccessKeys'
+              - 'iam:GetInstanceProfile'
+              - 'iam:ListGroupPolicies'
+              - 'iam:GetSSHPublicKey'
+              - 'iam:ListRoles'
+              - 'iam:ListUserPolicies'
+              - 'iam:ListInstanceProfiles'
+              - 'iam:GetContextKeysForCustomPolicy'
+              - 'iam:ListPolicyVersions'
+              - 'iam:ListOpenIDConnectProviders'
+              - 'iam:ListServerCertificateTags'
+              - 'iam:ListAccountAliases'
+              - 'iam:ListUsers'
+              - 'iam:GetUser'
+              - 'iam:ListGroups'
+              - 'iam:ListMFADeviceTags'
+              - 'iam:GetLoginProfile'
+              - 'iam:ListUserTags'
+            Resource: "arn:aws:iam::*"
+      Roles:
+        - !Ref MyRole
+        - !Ref MySecondRole
