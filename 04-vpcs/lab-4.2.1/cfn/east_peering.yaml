@@ -1,0 +1,26 @@
+Parameters:
+  eastVpcId:
+    Description: string of vpc id to use
+    Type: String
+  westVpcId:
+    Description: string of vpc id to use
+    Type: String
+Resources:
+  VpcPeeringConnection:
+    Type: AWS::EC2::VPCPeeringConnection
+    Properties:
+      PeerVpcId: !Ref westVpcId 
+      VpcId: !Ref eastVpcId
+      PeerRegion: us-west-2
+  # VpcPeerRouteEastToWest:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: rtb-0c5ae1f696029ae59
+  #     VpcPeeringConnectionId: !Ref VpcPeeringConnection
+  #     DestinationCidrBlock: "10.20.0.0/16"
+  # VpcPeerRouteWestToEast:
+  #   Type: AWS::EC2::Route
+  #   Properties:
+  #     RouteTableId: rtb-042c828ca6850d173
+  #     VpcPeeringConnectionId: !Ref VpcPeeringConnection
+  #     DestinationCidrBlock: "10.10.0.0/16"

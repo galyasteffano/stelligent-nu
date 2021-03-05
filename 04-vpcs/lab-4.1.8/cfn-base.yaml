@@ -1,0 +1,300 @@
+Outputs:
+  PrivSubnetId:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: PrivSubnetId-jdix
+    Value: !Ref 'PrivSubnet'
+  SubnetId:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: SubnetId-jdix
+    Value: !Ref 'Subnet'
+  VpcId:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: VpcId-jdix
+    Value: !Ref 'Vpc'
+Parameters:
+  subnetCidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  vpcCidrParam:
+    Description: string of vpc cidr block to use
+    Type: String
+Resources:
+  Igw:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  MyFirstNetAcl:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::NetworkAcl
+  MyInNetAclEntry:
+    Properties:
+      CidrBlock: 74.77.86.69/32
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      PortRange:
+        From: 22
+        To: 22
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 100
+    Type: AWS::EC2::NetworkAclEntry
+  MyNatGateway:
+    Properties:
+      AllocationId: !GetAtt 'MyNgwEip.AllocationId'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::NatGateway
+  MyNgwEip:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+    Type: AWS::EC2::EIP
+  MyPriv2InternetClientPortsNetAclEntry:
+    Properties:
+      CidrBlock: '0.0.0.0/0'
+      NetworkAclId: !Ref 'MySecondNetAcl'
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 100
+    Type: AWS::EC2::NetworkAclEntry
+  MyPriv2PubClientPortsNetAclEntry:
+    Properties:
+      CidrBlock: 10.10.1.0/24
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 101
+    Type: AWS::EC2::NetworkAclEntry
+  MyPrivHttpNetAclEntry:
+    Properties:
+      CidrBlock: 10.10.0.0/24
+      NetworkAclId: !Ref 'MySecondNetAcl'
+      PortRange:
+        From: 80
+        To: 80
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 102
+    Type: AWS::EC2::NetworkAclEntry
+  MyPrivIcmpv4NetAclEntry:
+    Properties:
+      CidrBlock: 10.10.0.0/24
+      Icmp:
+        Code: -1
+        Type: -1
+      NetworkAclId: !Ref 'MySecondNetAcl'
+      Protocol: 1
+      RuleAction: allow
+      RuleNumber: 103
+    Type: AWS::EC2::NetworkAclEntry
+  MyPrivOutNetAclEntry:
+    Properties:
+      CidrBlock: '0.0.0.0/0'
+      Egress: true
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+    Type: AWS::EC2::NetworkAclEntry
+  MyPrivSshNetAclEntry:
+    Properties:
+      CidrBlock: 10.10.0.0/24
+      NetworkAclId: !Ref 'MySecondNetAcl'
+      PortRange:
+        From: 22
+        To: 22
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 101
+    Type: AWS::EC2::NetworkAclEntry
+  MyPub2DefaultClientPortsNetAclEntry:
+    Properties:
+      CidrBlock: '0.0.0.0/0'
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      PortRange:
+        From: 1024
+        To: 65535
+      Protocol: 6
+      RuleAction: allow
+      RuleNumber: 102
+    Type: AWS::EC2::NetworkAclEntry
+  MyPubIcmpv4NetAclEntry:
+    Properties:
+      CidrBlock: 10.10.1.0/24
+      Icmp:
+        Code: -1
+        Type: -1
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      Protocol: 1
+      RuleAction: allow
+      RuleNumber: 103
+    Type: AWS::EC2::NetworkAclEntry
+  MyPubOutNetAclEntry:
+    Properties:
+      CidrBlock: '0.0.0.0/0'
+      Egress: true
+      NetworkAclId: !Ref 'MySecondNetAcl'
+      Protocol: -1
+      RuleAction: allow
+      RuleNumber: 100
+    Type: AWS::EC2::NetworkAclEntry
+  MySecondNetAcl:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::NetworkAcl
+  PrivRouteTable:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  PrivSubnet:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: 10.10.1.0/24
+      MapPublicIpOnLaunch: false
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  RouteTable:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblPrivSubnetAsoc:
+    Properties:
+      RouteTableId: !Ref 'PrivRouteTable'
+      SubnetId: !Ref 'PrivSubnet'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  RouteTblSubnetAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  Subnet:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetCidrParam'
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'Igw'
+      RouteTableId: !Ref 'RouteTable'
+    Type: AWS::EC2::Route
+  privSubNaclAsoc:
+    Properties:
+      NetworkAclId: !Ref 'MySecondNetAcl'
+      SubnetId: !Ref 'PrivSubnet'
+    Type: AWS::EC2::SubnetNetworkAclAssociation
+  privateOutRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      NatGatewayId: !Ref 'MyNatGateway'
+      RouteTableId: !Ref 'PrivRouteTable'
+    Type: AWS::EC2::Route
+  subNaclAsoc:
+    Properties:
+      NetworkAclId: !Ref 'MyFirstNetAcl'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::SubnetNetworkAclAssociation

@@ -133,10 +133,15 @@ Launch an EC2 instance into your VPC.
 
 _After you launch your new stack, can you ssh to the instance?_
 
+> no
+
 ##### Question: Verify Connectivity
 
 _Is there a way that you can verify Internet connectivity from the instance
 without ssh'ing to it?_
+
+> ping, if it was allowed, but neither are at this point. without modifying the 
+sg, i don't think there's a way at this point.
 
 #### Lab 4.1.5: Security Group
 
@@ -147,6 +152,8 @@ Add a security group to your EC2 stack:
 ##### Question: Connectivity
 
 _Can you ssh to your instance yet?_
+
+> yes!
 
 #### Lab 4.1.6: Elastic IP
 
@@ -164,9 +171,13 @@ reachable from anywhere outside your VPC.
 
 _Can you ping your instance now?_
 
+> yes, since 4.1.5, now with a static ip
+
 ##### Question: SSH
 
 _Can you ssh into your instance now?_
+
+> yes, since 4.1.5, now with a static ip
 
 ##### Question: Traffic
 
@@ -174,6 +185,8 @@ _If you can ssh, can you send any traffic (e.g. curl) out to the Internet?_
 
 At this point, you've made your public EC2 instance an [ssh bastion](https://docs.aws.amazon.com/quickstart/latest/linux-bastion/architecture.html).
 We'll make use of that to explore your network below.
+
+> yes, since 4.1.5, now with a static ip
 
 #### Lab 4.1.7: NAT Gateway
 
@@ -200,19 +213,28 @@ existing instance stack.
 
 _Can you find a way to ssh to this instance?_
 
+> yes
+
 ##### Question: Egress
 
 _If you can ssh to it, can you send traffic out?_
+
+> yes
 
 ##### Question: Deleting the Gateway
 
 _If you delete the NAT gateway, what happens to the ssh session on your private
 instance?_
 
+> fine, only using nat gateway to route out for priv subnet
+
 ##### Question: Recreating the Gateway
 
 _If you recreate the NAT gateway and detach the Elastic IP from the public EC2
 instance, can you still reach the instance from the outside?_
+
+> yes, we just change the ip we're using and it isn't an eip (which stays
+> constant)
 
 Test it out with the AWS console.
 
@@ -300,12 +322,16 @@ Elastic IP.
 
 _Can you ping this instance from the public instance you created earlier?_
 
+> yes
+
 ##### Question: Private to Public
 
 _Can you ping your public instance from this private instance? Which IPs are
 reachable, the public instance's private IP or its public IP, or both?_
 
 Use traceroute to see where traffic flows to both the public and private IPs.
+
+> just the private, there's no default route on its route table
 
 #### Lab 4.2.3: VPC Endpoint Gateway to S3
 
@@ -346,6 +372,8 @@ you to learn._
 #### Question: Corporate Networks
 
 _How would you integrate your VPC with a corporate network?_
+
+> endpoints are a good way to make sure service traffic only flows through private networks
 
 ## Further Reading
 

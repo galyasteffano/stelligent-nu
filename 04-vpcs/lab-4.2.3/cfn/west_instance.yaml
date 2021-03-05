@@ -1,0 +1,70 @@
+Outputs:
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: InstanceId-jdix
+    Value: !Ref 'MyInstance'
+  InstancePrivateIP:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: InstancePrivateIP-jdix
+    Value: !GetAtt 'MyInstance.PrivateIp'
+Parameters:
+  amiId:
+    Description: string of vpc cidr block to use
+    Type: AWS::EC2::Image::Id
+  instanceType:
+    Description: string of vpc cidr block to use
+    Type: String
+  keyName:
+    Description: string of vpc cidr block to use
+    Type: String
+Resources:
+  MyInstance:
+    Properties:
+      ImageId: !Ref 'amiId'
+      InstanceType: !Ref 'instanceType'
+      KeyName: !Ref 'keyName'
+      SecurityGroupIds:
+        - !Ref 'MySg'
+      SubnetId: !ImportValue 'SubnetId-jdix'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-2
+        - Key: user
+          Value: josh.dix.labs
+    Type: AWS::EC2::Instance
+  MyPingIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: -1
+      GroupId: !Ref 'MySg'
+      IpProtocol: icmp
+      ToPort: -1
+    Type: AWS::EC2::SecurityGroupIngress
+  MySg:
+    Properties:
+      GroupDescription: who cares
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-2
+        - Key: user
+          Value: josh.dix.labs
+      VpcId: !ImportValue 'VpcId-jdix'
+    Type: AWS::EC2::SecurityGroup
+  MySshIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      GroupId: !Ref 'MySg'
+      IpProtocol: tcp
+      ToPort: 22
+    Type: AWS::EC2::SecurityGroupIngress

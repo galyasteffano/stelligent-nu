@@ -1,0 +1,38 @@
+Outputs:
+  InstanceId:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: InstanceId-jdix
+    Value: !Ref 'MyInstance'
+  InstancePrivateIP:
+    Description: InstanceId of the newly created EC2 instance
+    Export:
+      Name: InstancePrivateIP-jdix
+    Value: !GetAtt 'MyInstance.PrivateIp'
+Parameters:
+  AmiId:
+    Description: string of vpc cidr block to use
+    Type: AWS::EC2::Image::Id
+  InstanceType:
+    Description: string of vpc cidr block to use
+    Type: String
+  keyName:
+    Description: string of vpc cidr block to use
+    Type: String
+Resources:
+  MyInstance:
+    Properties:
+      ImageId: !Ref 'AmiId'
+      InstanceType: !Ref 'InstanceType'
+      KeyName: !Ref 'keyName'
+      SubnetId: !ImportValue 'SubnetId-jdix'
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+        - Key: stelligent_u_lab
+          Value: lab-1
+        - Key: stelligent_u_lesson
+          Value: lesson-4-1
+        - Key: user
+          Value: josh.dix.labs
+    Type: AWS::EC2::Instance

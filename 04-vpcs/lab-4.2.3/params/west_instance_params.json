@@ -1,0 +1,14 @@
+[
+    {
+        "ParameterKey": "keyName",
+        "ParameterValue": "josh.dix.labs.mac.keypair.uswest2"
+    },
+    {
+        "ParameterKey": "amiId",
+        "ParameterValue": "ami-09c5e030f74651050"
+    },
+    {
+        "ParameterKey": "instanceType",
+        "ParameterValue": "t2.micro"
+    }
+]

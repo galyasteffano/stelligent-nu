@@ -1,0 +1,10 @@
+[
+    {
+        "ParameterKey": "eastVpcId",
+        "ParameterValue": "vpc-0c00f46d9ed276b1c"
+    },
+    {
+        "ParameterKey": "westVpcId",
+        "ParameterValue": "vpc-0ecabd382465b68d2"
+    }
+]
