@@ -135,6 +135,8 @@ created for you in Lab 6.1.1.
 _What config info or resources did you have to create explicitly that Amazon
 created for you when launching an ASG from an existing instance?_
 
+> launch config
+
 #### Lab 6.1.3: Launch Config Changes
 
 Modify your launch config by increasing your instances from t2.micro to
@@ -146,9 +148,13 @@ _After updating your stack, did your running instance get replaced or resized?_
 
 Terminate the instance in your ASG.
 
+> nope
+
 ##### Question: Replacement Instance
 
 _Is the replacement instance the new size or the old?_
+
+> old
 
 #### Lab 6.1.4: ASG Update Policy
 
@@ -162,6 +168,8 @@ type to t2.medium. Update your stack.
 
 _After updating, what did you see change? Did your running instance get
 replaced this time?_
+
+> yes
 
 ##### Question: Launch Config
 
@@ -177,6 +185,8 @@ parameters you need to.
 
 _What config info or resources do you have to provide in addition to what
 Launch Configurations require?_
+
+> same stuff more or less. when using templates, you must specify a version
 
 You'll see both launch configs and launch templates in your client
 engagements. Templates were [introduced in Nov 2017](https://aws.amazon.com/about-aws/whats-new/2017/11/introducing-launch-templates-for-amazon-ec2-instances/)
@@ -194,6 +204,8 @@ associated with those. Then tear your stack down.
 
 _After you tear down the stack, do all the associated resources go away?
 What's left?_
+
+> launch configs
 
 ### Retrospective 6.1
 
@@ -242,6 +254,8 @@ the new instance launch.
 _How long did it take for the new instance to spin up? How long before it was
 marked as healthy?_
 
+> a few minutes / a few minutes (not quick for sure)
+
 #### Lab 6.2.2: Scale Out
 
 Watch your stack and your ASG in the web console as you do this lab.
@@ -249,13 +263,19 @@ Watch your stack and your ASG in the web console as you do this lab.
 Modify your stack template to increase the desired number of instances,
 then update the stack.
 
+> i already had max set to 2, so it worked.
+
 ##### Question: Desired Count
 
 _Did it work? If it didn't, what else do you have to increase?_
+ 
+> i already had max set to 2, so it worked.
 
 ##### Question: Update Delay
 
 _How quickly after your stack update did you see the ASG change?_
+
+> pretty quickly, maybe 2-3 minutes total
 
 #### Lab 6.2.3: Manual Interference
 
@@ -339,11 +359,15 @@ and use that command to spike the load.)
 
 _After the scaling interval, do you see a new instance created?_
 
+> yes
+
 Stop the CPU-consuming process.
 
 ##### Question: Scale-In
 
 _After the load has been low for a few minutes, do you see any instances terminated?_
+
+> no
 
 #### Lab 6.3.2: Simple Scale-In
 
@@ -353,11 +377,14 @@ Add another alarm, this time to allow the group to scale back in (or
 - Watch for CPU utilization below 40% over a period of 2 minutes and
   scale in.
 
+
 Update your stack.
 
 ##### Question: Instance Count
 
 _Do you see more instances than the configured "desired capacity"?_
+
+> when scaling yeah
 
 ##### Question: Termination Order
 
@@ -389,15 +416,21 @@ update your stack again.*
 _Is your resulting configuration more or less complicated than the one that
 uses a simple policy?_
 
+> simpler for sure!
+
 Consume CPU the way you did in lab 1, then stop.
 
 ##### Question: Scale-Out Delay
 
 _How long do you have to let it run before you see the group scale out?_
 
+> not too long, about 3-5 minutes
+
 ##### Question: Scale-In Delay
 
 _How much time passes after you stop before it scales back in?_
+
+> same, 3-5 minutes
 
 #### Lab 6.3.4: Target Tracking Scale-In
 
@@ -408,6 +441,8 @@ an instance is added.
 ##### Question: Changing Delay
 
 _After you stop consuming CPU, how long does it take now before scale-in?_
+
+> at least 15 minutes (the alarm default is for 15 datapoints!)
 
 ### Retrospective 6.3
 

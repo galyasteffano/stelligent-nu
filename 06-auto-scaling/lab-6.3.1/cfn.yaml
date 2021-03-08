@@ -1,0 +1,166 @@
+Parameters:
+  subnetCidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  vpcCidrParam:
+    Description: string of vpc cidr block to use
+    Type: String
+Resources:
+  Igw:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  RouteTable:
+    Properties:
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblSubnetAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  Subnet:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetCidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref Igw
+      RouteTableId: !Ref RouteTable
+    Type: AWS::EC2::Route
+  MySg:
+    Properties:
+      GroupDescription: who cares
+      VpcId: !Ref Vpc
+    Type: AWS::EC2::SecurityGroup
+  MySshIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      GroupId: !Ref MySg
+      IpProtocol: tcp
+      ToPort: 22
+    Type: AWS::EC2::SecurityGroupIngress
+  MyRdpIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 3389
+      GroupId: !Ref MySg
+      IpProtocol: tcp
+      ToPort: 3389
+    Type: AWS::EC2::SecurityGroupIngress
+  MyPingIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: -1
+      GroupId: !Ref MySg
+      IpProtocol: icmp
+      ToPort: -1
+    Type: AWS::EC2::SecurityGroupIngress
+  MyLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        KeyName: josh.dix.labs.mac.keypair.useast2
+        SecurityGroupIds:
+          - !Ref MySg
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: tagkeyexample
+                Value: tagvalueexample
+
+  MyAsg:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      MaxSize: "3"
+      MinSize: "1"
+      DesiredCapacity: "1"
+      LaunchTemplate:
+        Version: !GetAtt MyAsgLaunchTemplate.LatestVersionNumber
+        LaunchTemplateId: !Ref MyAsgLaunchTemplate
+      AvailabilityZones:
+        - !GetAtt Subnet.AvailabilityZone
+      VPCZoneIdentifier:
+        - !Ref Subnet
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: true
+  MyAsgLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateData:
+        ImageId: ami-0eec7e5aeb20f40ce
+        InstanceType: c5.large
+        KeyName: josh.dix.labs.mac.keypair.useast2
+        SecurityGroupIds:
+          - !Ref MySg
+        Monitoring: 
+          Enabled: true # enables 60s monitoring otherwise default is 300s
+      LaunchTemplateName: MyLaunchTemplateName
+  MyCpuScalingUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref MyAsg
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: 1
+      Cooldown: '120'
+  MyCpuScalingDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AutoScalingGroupName: !Ref MyAsg
+      PolicyType: SimpleScaling
+      AdjustmentType: ChangeInCapacity
+      ScalingAdjustment: -1
+      Cooldown: '120'
+  MyScaleUpCloudWatchAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Threshold: 60
+      Statistic: Average
+      EvaluationPeriods: 1
+      Period: 60
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      AlarmActions:
+        - !Ref MyCpuScalingUpPolicy
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref MyAsg
+  MyScaleDownCloudWatchAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Threshold: 40
+      Statistic: Average
+      EvaluationPeriods: 1
+      Period: 60
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      AlarmActions:
+        - !Ref MyCpuScalingDownPolicy
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref MyAsg
