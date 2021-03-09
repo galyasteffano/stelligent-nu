@@ -8,6 +8,7 @@ boto3 = "*"
 pipfile = "*"
 pyyaml = "*"
 troposphere = {extras = ["policy"], version = "*"}
+awslogs = "*"
 
 [dev-packages]
 
