@@ -1,0 +1,113 @@
+Parameters:
+  subnetCidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  vpcCidrParam:
+    Description: string of vpc cidr block to use
+    Type: String
+Resources:
+  Igw:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  RouteTable:
+    Properties:
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblSubnetAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  Subnet:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetCidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'Igw'
+      RouteTableId: !Ref 'RouteTable'
+    Type: AWS::EC2::Route
+  MySg:
+    Properties:
+      GroupDescription: who cares
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::SecurityGroup
+  MySshIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      GroupId: !Ref 'MySg'
+      IpProtocol: tcp
+      ToPort: 22
+    Type: AWS::EC2::SecurityGroupIngress
+  MyRdpIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 3389
+      GroupId: !Ref 'MySg'
+      IpProtocol: tcp
+      ToPort: 3389
+    Type: AWS::EC2::SecurityGroupIngress
+  MyPingIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: -1
+      GroupId: !Ref 'MySg'
+      IpProtocol: icmp
+      ToPort: -1
+    Type: AWS::EC2::SecurityGroupIngress
+
+
+
+  MyLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: MyLaunceTemplate
+      LaunchTemplateData:
+        KeyName: josh.dix.labs.mac.keypair.useast2
+        SecurityGroupIds:
+          - !Ref MySg
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: tagkeyexample
+                Value: tagvalueexample
+  MyLinuxInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: "ami-037c234ac9f2dab36"
+      SubnetId: !Ref Subnet
+      InstanceType: "t2.small"
+      LaunchTemplate:
+        Version: !GetAtt 'MyLaunchTemplate.LatestVersionNumber'
+        LaunchTemplateId: !Ref MyLaunchTemplate
+  MyWindowsInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: "ami-0ffd6b5326a02a1a9"
+      SubnetId: !Ref Subnet
+      InstanceType: "t2.small"
+      LaunchTemplate:
+        Version: !GetAtt 'MyLaunchTemplate.LatestVersionNumber'
+        LaunchTemplateId: !Ref MyLaunchTemplate

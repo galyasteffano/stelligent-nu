@@ -1,0 +1,276 @@
+Parameters:
+  subnetCidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  vpcCidrParam:
+    Description: string of vpc cidr block to use
+    Type: String
+Resources:
+  Igw:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  RouteTable:
+    Properties:
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblSubnetAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  Subnet:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetCidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref Igw
+      RouteTableId: !Ref RouteTable
+    Type: AWS::EC2::Route
+  MySg:
+    Properties:
+      GroupDescription: who cares
+      VpcId: !Ref Vpc
+    Type: AWS::EC2::SecurityGroup
+  MySshIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      GroupId: !Ref MySg
+      IpProtocol: tcp
+      ToPort: 22
+    Type: AWS::EC2::SecurityGroupIngress
+  MyRdpIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 3389
+      GroupId: !Ref MySg
+      IpProtocol: tcp
+      ToPort: 3389
+    Type: AWS::EC2::SecurityGroupIngress
+  MyPingIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: -1
+      GroupId: !Ref MySg
+      IpProtocol: icmp
+      ToPort: -1
+    Type: AWS::EC2::SecurityGroupIngress
+  MyLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: MyLaunceTemplate
+      LaunchTemplateData:
+        KeyName: josh.dix.labs.mac.keypair.useast2
+        SecurityGroupIds:
+          - !Ref MySg
+        TagSpecifications:
+          - ResourceType: instance
+            Tags:
+              - Key: tagkeyexample
+                Value: tagvalueexample
+  MyLinuxInstance:
+    Type: AWS::EC2::Instance
+    # Metadata:
+    #   AWS::CloudFormation::Init:
+    #     configSets:
+    #       cloudwatchInitialization: 
+    #         - cwFiles
+    #         - cwCommands
+    #       makeFs:
+    #         - makeFsCommands
+    #       default:
+    #         - cwFiles
+    #         - cwCommands
+    #         - makeFsCommands
+    #     cwFiles:
+    #       files:
+    #         /opt/aws/amazon-cloudwatch-agent/bin/config.json:
+    #           content: |
+    #             #!/bin/bash
+    #             {
+    #               "agent": {
+    #                 "metrics_collection_interval": 60,
+    #                 "run_as_user": "root"
+    #               },
+    #               "metrics": {
+    #                 "append_dimensions": {
+    #                   "AutoScalingGroupName": "${aws:AutoScalingGroupName}",
+    #                   "ImageId": "${aws:ImageId}",
+    #                   "InstanceId": "${aws:InstanceId}",
+    #                   "InstanceType": "${aws:InstanceType}"
+    #                 },
+    #                 "metrics_collected": {
+    #                   "disk": {
+    #                     "measurement": [
+    #                       "used_percent"
+    #                     ],
+    #                     "metrics_collection_interval": 60,
+    #                     "resources": [
+    #                       "*"
+    #                     ]
+    #                   },
+    #                   "mem": {
+    #                     "measurement": [
+    #                       "mem_used_percent"
+    #                     ],
+    #                     "metrics_collection_interval": 60
+    #                   }
+    #                 }
+    #               }
+    #             }
+    #     cwCommands:
+    #       commands:
+    #         aaaCommand:
+    #           command: 'apt-get update -y'
+    #         aabCommand:
+    #           command: 'curl https://s3.amazonaws.com/amazoncloudwatch-agent/debian/amd64/latest/amazon-cloudwatch-agent.deb -O'
+    #         aacCommand:
+    #           command: 'dpkg -i -E ./amazon-cloudwatch-agent.deb'
+    #         aadCommand:
+    #           command: '/opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json'
+    #     makeFsCommands:
+    #       commands:
+    #         aaeCommand:
+    #           command: 'sleep 180'
+    #         aafCommand:
+    #           command: 'mkfs -t xfs /dev/xvdf'
+    #         aagCommand:
+    #           command: 'mkdir /data'
+    #         aahCommand:
+    #           command: 'mount /dev/xvdf /data'
+    #         aaiCommand:
+    #           command: 'chmod 777 /data && echo somedata >> /data/new-file.txt'
+    #         # below only works with 1 volume
+    #         aajCommand:
+    #           command: "blkid | grep -Eo '[a-z,0-9]*-[a-z,0-9]*-[a-z,0-9]*-[a-z,0-9]*-[a-z,0-9]*' | tail -n 1 >> id.txt"
+    #         aakCommand:
+    #           command: 'varname=`cat id.txt`; echo "UUID=$varname  /data  xfs  defaults,nofail  0  2" | tee -a /etc/fstab'
+    Properties:
+      ImageId: "ami-037c234ac9f2dab36"
+      SubnetId: !Ref Subnet
+      InstanceType: "t2.small"
+      IamInstanceProfile: !Ref MyInstanceProfile
+
+      # BlockDeviceMappings:
+      #   - DeviceName: /dev/xvdf
+      #     Ebs:
+      #       VolumeSize: 3
+      # UserData: !Base64
+      #   'Fn::Join':
+      #     - ''
+      #     - - |
+      #         #!/bin/bash -xe
+      #         apt-get update -y
+      #         apt-get install -y python-setuptools
+      #         mkdir -p /opt/aws/amazon-cloudwatch-agent/bin/
+      #         mkdir -p /opt/aws/bin
+      #         wget https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+      #         python -m easy_install --script-dir /opt/aws/bin aws-cfn-bootstrap-latest.tar.gz
+      #         sleep 5
+      #         # /opt/aws/bin/cfn-init -v --stack lab-5-4-1-jdix --resource MyLinuxInstance --configsets default --region us-east-2
+      #         # /opt/aws/bin/cfn-signal -e $? --stack lab-5-4-1-jdix --resource MyLinuxInstance --region us-east-2
+      #       - |
+              
+      #         # cfn init
+      #       - '/opt/aws/bin/cfn-init -v '
+      #       - '         --stack '
+      #       - !Ref 'AWS::StackName'
+      #       - '         --resource MyLinuxInstance '
+      #       - '         --configsets default '
+      #       - '         --region '
+      #       - !Ref 'AWS::Region'
+      #       - |
+              
+      #         # cfn signal
+      #       - '/opt/aws/bin/cfn-signal -e $? '
+      #       - '         --stack '
+      #       - !Ref 'AWS::StackName'
+      #       - '         --resource MyLinuxInstance '
+      #       - '         --region '
+      #       - !Ref 'AWS::Region'
+      #       - |+
+      LaunchTemplate:
+        Version: !GetAtt 'MyLaunchTemplate.LatestVersionNumber'
+        LaunchTemplateId: !Ref MyLaunchTemplate
+  MyInstanceEip:
+    Type: AWS::EC2::EIP
+    Properties:
+      InstanceId: !Ref MyLinuxInstance
+
+
+  MyEbsVolume:
+    Type: AWS::EC2::Volume
+    Properties:
+      AvailabilityZone: !GetAtt MyLinuxInstance.AvailabilityZone
+      VolumeType: gp2
+      Size: 3
+      SnapshotId: snap-0dff546436b482c78
+  MyVolumeAttachment:
+    Type: AWS::EC2::VolumeAttachment
+    Properties:
+      Device: /dev/sdf
+      InstanceId: !Ref MyLinuxInstance
+      VolumeId: !Ref MyEbsVolume
+
+  MyCloudWatchEnabledRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+  MyInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref MyCloudWatchEnabledRole
+  MyCfnPolicyForHelperScripts:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement: 
+          - Sid: "VisualEditor0"
+            Effect: "Allow"
+            Action:
+              - "cloudformation:DescribeStackResources"
+              - "cloudformation:SignalResource"
+              - "cloudformation:DescribeStackResource"
+            Resource: "*"
+      Roles:
+        - !Ref MyCloudWatchEnabledRole
+
+Outputs:
+  UbuntuEipOut:
+    Value: !Ref MyInstanceEip
+    Export:
+      Name: UbuntuEip
