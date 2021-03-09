@@ -1,0 +1,53 @@
+Outputs:
+  SubnetId:
+    Export:
+      Name: SubnetId-jdix
+    Value: !Ref 'Subnet'
+  VpcId:
+    Export:
+      Name: VpcId-jdix
+    Value: !Ref 'Vpc'
+Parameters:
+  subnetCidrParam:
+    Type: String
+  vpcCidrParam:
+    Type: String
+Resources:
+  Igw:
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  RouteTable:
+    Properties:
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblSubnetAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  Subnet:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetCidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'Igw'
+      RouteTableId: !Ref 'RouteTable'
+    Type: AWS::EC2::Route

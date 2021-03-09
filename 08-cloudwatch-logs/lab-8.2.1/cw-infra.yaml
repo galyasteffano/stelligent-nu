@@ -1,0 +1,101 @@
+Parameters:
+  subnetCidrParam:
+    Type: String
+  vpcCidrParam:
+    Type: String
+Resources:
+  CwGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: josh.dix.c9logs
+  CwGroupRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AssumeRole1
+          Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: 'cloudtrail-policy'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            Resource: !GetAtt 'CwGroup.Arn'
+  S3CtBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: josh-dix-s3-cloudtrail-lab-8-2-1
+  S3CtBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref S3CtBucket
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 's3:GetBucketAcl'
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref S3CtBucket ] ] 
+          - Action:
+              - 's3:PutObject'
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref S3CtBucket, '/*' ] ] 
+            Condition:
+              StringEquals:
+                "s3:x-amz-acl": "bucket-owner-full-control"
+  CloudTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      CloudWatchLogsLogGroupArn: !GetAtt CwGroup.Arn
+      CloudWatchLogsRoleArn: !GetAtt CwGroupRole.Arn
+      IsLogging: true
+      S3BucketName: !Ref S3CtBucket
+  Igw:
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  RouteTable:
+    Properties:
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblSubnetAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'Subnet'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  Subnet:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetCidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref 'Igw'
+      RouteTableId: !Ref 'RouteTable'
+    Type: AWS::EC2::Route
