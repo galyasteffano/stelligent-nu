@@ -1,0 +1,196 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  subnetACidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  subnetBCidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  vpcCidrParam:
+    Description: string of vpc cidr block to use
+    Type: String
+
+Resources:
+  WebServersLC:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Properties:
+      ImageId: 'ami-04152c3a27c49a944'
+      InstanceType: 't2.micro'
+      LaunchConfigurationName: 'SimpleWebServerLC'
+      SecurityGroups:
+        - !Ref MySg
+      UserData: 
+        Fn::Base64:
+          Fn::Sub: |
+            #!/bin/bash -xe
+
+            yum install -y aws-cfn-bootstrap
+
+            # Install the files and packages from the metadata
+            /opt/aws/bin/cfn-init -v \
+              --stack ${AWS::StackName} \
+              --resource WebServersLC \
+              --configsets All \
+              --region ${AWS::Region}
+
+            # Signal the status from cfn-init
+            /opt/aws/bin/cfn-signal -e $? \
+              --stack ${AWS::StackName} \
+              --resource WebServersLC \
+              --region ${AWS::Region}
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          All:
+            - ConfigureStelligentProject
+        ConfigureStelligentProject:
+          packages:
+            yum:
+              nginx: []
+          files:
+            /usr/share/nginx/html/index.html:
+              content: '<p>Automation for the People</p>'
+              mode: '000644'
+              owner: root
+              group: root
+          services:
+            sysvinit:
+              nginx:
+                enabled: 'true'
+                ensureRunning: 'true'
+  WebServerAsg:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      # AutoScalingGroupName: 'AutomationBoxes'
+      VPCZoneIdentifier:
+        - !Ref SubnetA
+        - !Ref SubnetB
+      DesiredCapacity: '3'
+      HealthCheckType: 'ELB'
+      HealthCheckGracePeriod: 30 
+      LaunchConfigurationName: !Ref WebServersLC
+      MaxSize: '3'
+      MinSize: '3'
+      TargetGroupARNs:
+        - !Ref MyLbTargetGroup
+  MyLbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckPath: '/BADindex.html'
+      HealthCheckIntervalSeconds: 20
+      UnhealthyThresholdCount: 3
+      HealthyThresholdCount: 2
+      VpcId: !Ref Vpc
+      Protocol: HTTP
+      Port: 80
+      TargetGroupAttributes:
+        - Key: deregistration_delay.timeout_seconds
+          Value: '20'
+  MyAlb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - !Ref MySg
+      Subnets:
+        - !Ref SubnetA
+        - !Ref SubnetB
+  MyAlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref MyAlb
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref MyLbTargetGroup
+
+  # template vpc stuff
+  Igw:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  RouteTable:
+    Properties:
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblSubnetAAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'SubnetA'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  SubnetA:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetACidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  RouteTblSubnetBAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'SubnetB'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  SubnetB:
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetBCidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref Igw
+      RouteTableId: !Ref RouteTable
+    Type: AWS::EC2::Route
+  MySg:
+    Properties:
+      GroupDescription: who cares
+      VpcId: !Ref Vpc
+    Type: AWS::EC2::SecurityGroup
+  MySshIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      GroupId: !Ref MySg
+      IpProtocol: tcp
+      ToPort: 22
+    Type: AWS::EC2::SecurityGroupIngress
+  MyHttpIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 80
+      GroupId: !Ref MySg
+      IpProtocol: tcp
+      ToPort: 80
+    Type: AWS::EC2::SecurityGroupIngress
+  MyPingIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: -1
+      GroupId: !Ref MySg
+      IpProtocol: icmp
+      ToPort: -1
+    Type: AWS::EC2::SecurityGroupIngress
