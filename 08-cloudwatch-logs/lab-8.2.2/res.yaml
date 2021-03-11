@@ -1,0 +1,60 @@
+Mappings:
+  RegionMap:
+    us-east-2:
+      vpcId: 'vpc-0e4046a569d00c3d4'
+      subnetId: 'subnet-0b3073cb75fb2af11'
+      imageId: ami-0552e3455b9bc8d50
+Resources:
+  MyS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: 8-2-2-josh-dix
+      Tags:
+        - Key: who
+          Value: josh dix
+        - Key: what
+          Value: lab-8-2-2
+        - Key: why
+          Value: stone cold said so
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: EC2LaunchTemplate
+      LaunchTemplateData:
+        InstanceType: t2.medium
+        NetworkInterfaces:
+          - 
+            DeviceIndex: 0
+            Groups:
+              - !Ref MySg
+            AssociatePublicIpAddress: True
+            SubnetId: !FindInMap [ RegionMap, !Ref "AWS::Region", subnetId ]
+  EC2:
+    Type: AWS::EC2::Instance
+    Properties: 
+      KeyName: josh.dix.labs
+      LaunchTemplate: 
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: "1"
+      ImageId: !FindInMap [ RegionMap, !Ref "AWS::Region", imageId ]
+  MySg:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Topic 5 - EC2 Lab
+      VpcId: !FindInMap [ RegionMap, !Ref "AWS::Region", vpcId ]
+  MySshIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      GroupId: !Ref 'MySg'
+      IpProtocol: tcp
+      ToPort: 22
+    Type: AWS::EC2::SecurityGroupIngress
+  MyPingIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: -1
+      GroupId: !Ref 'MySg'
+      IpProtocol: icmp
+      ToPort: -1
+    Type: AWS::EC2::SecurityGroupIngress

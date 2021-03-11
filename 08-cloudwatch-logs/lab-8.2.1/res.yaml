@@ -1,0 +1,123 @@
+Mappings:
+  RegionMap:
+    us-east-1:
+      vpcId: 'vpc-0ba8fa52413dd702c'
+      subnetId: 'subnet-0bd8f563219baa945'
+      imageId: ami-04169656fea786776
+    us-east-2:
+      vpcId: 'vpc-048a45ea7d71ad878'
+      subnetId: 'subnet-0c51b97900cd47bd4'
+      imageId: ami-0552e3455b9bc8d50
+    us-west-1:
+      vpcId: 'vpc-05116ed0a04f74b50'
+      subnetId: 'subnet-0eb652a220e7d5132'
+      imageId: ami-059e7901352ebaef8
+    us-west-2:
+      vpcId: 'vpc-0ae351b027c7b4b5a'
+      subnetId: 'subnet-0120b75b804372797'
+      imageId: ami-51537029
+Resources:
+  LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+      LaunchTemplateName: EC2LaunchTemplate
+      LaunchTemplateData:
+        InstanceType: t2.medium
+        IamInstanceProfile: 
+          Name: !Ref InstanceProfile
+        NetworkInterfaces:
+          - 
+            DeviceIndex: 0
+            Groups:
+              - !Ref MySg
+            AssociatePublicIpAddress: True
+            SubnetId: !FindInMap [ RegionMap, !Ref "AWS::Region", subnetId ]
+        UserData: 
+          Fn::Base64: !Sub | 
+            #!/bin/bash
+            # set -xe
+            apt-get update -y
+            apt-get install -y python-setuptools
+            mkdir -p /opt/aws/amazon-cloudwatch-agent/bin/
+            mkdir -p /opt/aws/bin
+            wget https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-latest.tar.gz
+            python -m easy_install --script-dir /opt/aws/bin aws-cfn-bootstrap-latest.tar.gz
+            sleep 2
+
+            /opt/aws/bin/cfn-init -v \
+              --stack ${AWS::StackName} \
+              --resource EC2 \
+              --region ${AWS::Region}
+
+            /opt/aws/bin/cfn-signal -e $? \
+              --stack ${AWS::StackName} \
+              --resource EC2 \
+              --region ${AWS::Region}
+  EC2:
+    Type: AWS::EC2::Instance
+    Properties: 
+      KeyName: josh.dix.labs
+      LaunchTemplate: 
+        LaunchTemplateId: !Ref LaunchTemplate
+        Version: "1"
+      ImageId: !FindInMap [ RegionMap, !Ref "AWS::Region", imageId ]
+    CreationPolicy:
+      ResourceSignal:    
+        Count: 1
+        Timeout: PT5M
+    Metadata: 
+      AWS::CloudFormation::Init: 
+        config: 
+          sources: 
+            /etc/cloudwatchagent: https://s3.amazonaws.com/amazoncloudwatch-agent/linux/amd64/latest/AmazonCloudWatchAgent.zip
+          commands:
+            aaaInstallCloudwatch: 
+              command: ./install.sh
+              cwd: /etc/cloudwatchagent
+            aabGetCloudwatchConfig:
+              command: 'curl https://lab-8-1-2-jdix.s3.us-east-2.amazonaws.com/cloudwatch_template.txt --output /opt/aws/amazon-cloudwatch-agent/bin/config.json'
+            aacLaunchCloudwatch: 
+              command: /opt/aws/amazon-cloudwatch-agent/bin/amazon-cloudwatch-agent-ctl -a fetch-config -m ec2 -s -c file:/opt/aws/amazon-cloudwatch-agent/bin/config.json
+  InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties: 
+      Roles:
+        - !Ref RoleCloudWatch
+  RoleCloudWatch:
+    Type: AWS::IAM::Role
+    Properties: 
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy
+        - arn:aws:iam::aws:policy/CloudWatchLogsReadOnlyAccess
+        - arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Effect: "Allow"
+            Principal: 
+              Service: 
+                - "ec2.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+  MySg:
+    Type: AWS::EC2::SecurityGroup
+    Properties: 
+      GroupDescription: Topic 5 - EC2 Lab
+      VpcId: !FindInMap [ RegionMap, !Ref "AWS::Region", vpcId ]
+  MySshIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      GroupId: !Ref 'MySg'
+      IpProtocol: tcp
+      ToPort: 22
+    Type: AWS::EC2::SecurityGroupIngress
+  MyPingIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: -1
+      GroupId: !Ref 'MySg'
+      IpProtocol: icmp
+      ToPort: -1
+    Type: AWS::EC2::SecurityGroupIngress
