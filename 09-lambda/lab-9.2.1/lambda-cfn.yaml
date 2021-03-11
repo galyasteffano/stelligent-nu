@@ -1,0 +1,103 @@
+Resources:
+  MyApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !GetAtt MyRestApi.RootResourceId
+      RestApiId: !Ref MyRestApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt MyLambdaFunction.Arn
+  MyRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: MyRestApiName
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+  MyApiGwDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - MyApiMethod
+    Properties:
+      RestApiId: !Ref MyRestApi
+      StageName: stagename
+  MyLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/LambdaFuncName:*
+          PolicyName: lambda2cw
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - dynamodb:*
+                Effect: Allow
+                Resource: 
+                  - !GetAtt MyDynamoTable.Arn
+          PolicyName: lambda2dynamo
+  MyLambdaPermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - MyLambdaFunction
+      - MyRestApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt MyLambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${MyRestApi}/stagename/POST/
+  MyLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt MyLambdaRole.Arn
+      MemorySize: 128
+      Runtime: python3.8
+      Handler: notindex.handler
+      FunctionName: LambdaFuncName
+      Code: notindex.py
+  MyDynamoTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MyDynamoTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: AttName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: AttName
+          KeyType: HASH
+  lambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${MyLambdaFunction}
+      RetentionInDays: 90
+
+
+Outputs:
+  apiGatewayInvokeURL:
+    Value: !Sub https://${MyRestApi}.execute-api.${AWS::Region}.amazonaws.com/stagename
+  lambdaArn:
+    Value: !GetAtt MyLambdaFunction.Arn
