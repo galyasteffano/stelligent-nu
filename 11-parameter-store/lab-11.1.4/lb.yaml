@@ -1,0 +1,250 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  subnetACidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  subnetBCidrParam:
+    Description: string of subnet cidr block to use
+    Type: String
+  vpcCidrParam:
+    Description: string of vpc cidr block to use
+    Type: String
+  TimeZone:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /joshdix/timezone
+  StartDate:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /joshdix/startdate
+  State:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /joshdix/state
+  Name:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /joshdix
+  Team:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /joshdix/team
+
+
+
+Resources:
+  WebServersLC:
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+    Properties:
+      ImageId: 'ami-04152c3a27c49a944'
+      InstanceType: 't2.micro'
+      KeyName: josh.dix.labs
+      IamInstanceProfile: !Ref MyInstanceProfile
+      # LaunchConfigurationName: 'SimpleWebServerLC'
+      SecurityGroups:
+        - !Ref MySg
+      UserData: 
+        Fn::Base64:
+          Fn::Sub: |
+            #!/bin/bash
+
+            yum install -y aws-cfn-bootstrap
+            yum install -y aws-cli jq
+
+            # Install the files and packages from the metadata
+            /opt/aws/bin/cfn-init -v \
+              --stack ${AWS::StackName} \
+              --resource WebServersLC \
+              --configsets All \
+              --region ${AWS::Region}
+
+            # Signal the status from cfn-init
+            /opt/aws/bin/cfn-signal -e $? \
+              --stack ${AWS::StackName} \
+              --resource WebServersLC \
+              --region ${AWS::Region}
+            
+            aws ssm get-parameter --name /joshdix/middle-name --region us-east-2 --with-decryption | jq -rj ".Parameter.Value" | cat <(echo -n "<p>") - <(echo "</p>") >> /usr/share/nginx/html/index.html
+    Metadata:
+      'AWS::CloudFormation::Init':
+        configSets:
+          All:
+            - ConfigureStelligentProject
+            - ThenAddParameterStartService
+        ConfigureStelligentProject:
+          packages:
+            yum:
+              nginx: []
+          files:
+            /usr/share/nginx/html/index.html:
+              content: !Sub |
+                <p>Automation for the People</p>
+                <p>${Name}</p>
+                <p>${StartDate}</p>
+                <p>${TimeZone}</p>
+                <p>${State}</p>
+                <p>${Team}</p>
+              mode: '000644'
+              owner: root
+              group: root
+        ThenAddParameterStartService:
+          # commands:
+          #   putparaminhtml:
+          #     command: 'sleep 5 && aws ssm get-parameter --name /joshdix/middle-name --region us-east-2 --with-decryption | jq -rj ".Parameter.Value" | cat <(echo -n "<p>") - <(echo "</p>") >> /usr/share/nginx/html/index.html'
+          services:
+            sysvinit:
+              nginx:
+                enabled: 'true'
+                ensureRunning: 'true'
+  WebServerAsg:
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+    Properties:
+      # AutoScalingGroupName: 'AutomationBoxes'
+      VPCZoneIdentifier:
+        - !Ref SubnetA
+        - !Ref SubnetB
+      DesiredCapacity: '3'
+      HealthCheckType: 'ELB'
+      HealthCheckGracePeriod: 30 
+      LaunchConfigurationName: !Ref WebServersLC
+      MaxSize: '3'
+      MinSize: '3'
+      TargetGroupARNs:
+        - !Ref MyLbTargetGroup
+  MyLbTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      HealthCheckEnabled: true
+      HealthCheckPath: '/index.html'
+      HealthCheckIntervalSeconds: 90
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+      HealthCheckProtocol: HTTP
+      HealthCheckPort: '80'
+      VpcId: !Ref Vpc
+      Protocol: HTTP
+      Port: 80
+  MyAlb:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      SecurityGroups:
+        - !Ref MySg
+      Subnets:
+        - !Ref SubnetA
+        - !Ref SubnetB
+  MyAlbListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref MyAlb
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          ForwardConfig:
+            TargetGroups:
+              - TargetGroupArn: !Ref MyLbTargetGroup
+
+  # template vpc stuff
+  Igw:
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub '${AWS::StackName}'
+    Type: AWS::EC2::InternetGateway
+  IgwA:
+    Properties:
+      InternetGatewayId: !Ref 'Igw'
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::VPCGatewayAttachment
+  RouteTable:
+    Properties:
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::RouteTable
+  RouteTblSubnetAAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'SubnetA'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  SubnetA:
+    Properties:
+      AvailabilityZone: !Select
+        - 0
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetACidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  RouteTblSubnetBAsoc:
+    Properties:
+      RouteTableId: !Ref 'RouteTable'
+      SubnetId: !Ref 'SubnetB'
+    Type: AWS::EC2::SubnetRouteTableAssociation
+  SubnetB:
+    Properties:
+      AvailabilityZone: !Select
+        - 1
+        - !GetAZs ''
+      CidrBlock: !Ref 'subnetBCidrParam'
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref 'Vpc'
+    Type: AWS::EC2::Subnet
+  Vpc:
+    Properties:
+      CidrBlock: !Ref 'vpcCidrParam'
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      InstanceTenancy: default
+    Type: AWS::EC2::VPC
+  defaultRoute:
+    Properties:
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: !Ref Igw
+      RouteTableId: !Ref RouteTable
+    Type: AWS::EC2::Route
+  MySg:
+    Properties:
+      GroupDescription: who cares
+      VpcId: !Ref Vpc
+    Type: AWS::EC2::SecurityGroup
+  MySshIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 22
+      GroupId: !Ref MySg
+      IpProtocol: tcp
+      ToPort: 22
+    Type: AWS::EC2::SecurityGroupIngress
+  MyHttpIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: 80
+      GroupId: !Ref MySg
+      IpProtocol: tcp
+      ToPort: 80
+    Type: AWS::EC2::SecurityGroupIngress
+  MyPingIn:
+    Properties:
+      CidrIp: '0.0.0.0/0'
+      FromPort: -1
+      GroupId: !Ref MySg
+      IpProtocol: icmp
+      ToPort: -1
+    Type: AWS::EC2::SecurityGroupIngress
+  MyKMSReaderRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: lab-11-1-4-jdix-MyKMSReaderRole
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+            Action:
+              - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMReadOnlyAccess
+      #  - arn:aws:iam::aws:policy/AWSKeyManagementServicePowerUser
+  MyInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref MyKMSReaderRole

@@ -1,0 +1,33 @@
+
+
+Resources:
+  NameParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: josh-dix
+      Name: /joshdix
+  TeamParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: team me
+      Name: /joshdix/team
+  TimeZoneParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: est
+      Name: /joshdix/timezone
+  StateParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: NY
+      Name: /joshdix/state
+  StartDateParam:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Type: String
+      Value: feb-15-2021
+      Name: /joshdix/startdate
