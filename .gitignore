@@ -11,3 +11,6 @@ __pycache__
 
 .ruby-version
 josh.dix.labs*pem
+
+**/lab-12.1.1/params.json
+**params.json

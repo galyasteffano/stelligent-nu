@@ -122,6 +122,11 @@ them, including the CFN resources you need:
 _Is executing a CloudFormation template a legitimate example of an
 "application"? Provide an explanation._
 
+> I think it can be, as you can provice rest api services very easily as only 
+> aws infrastructure. There's probably other useful examples as well. It gets 
+> more complicated than just cloudformation when trying to maintain state of an
+> applicaiton with a persistent data tier.
+
 #### Question: Pipeline Template
 
 _Is your Pipeline template portable? Update and re-create your Pipeline if
