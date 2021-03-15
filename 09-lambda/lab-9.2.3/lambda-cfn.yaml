@@ -1,0 +1,212 @@
+Resources:
+  MyApiMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      HttpMethod: POST
+      ResourceId: !GetAtt MyRestApi.RootResourceId
+      RestApiId: !Ref MyRestApi
+      Integration:
+        IntegrationHttpMethod: POST
+        Type: AWS_PROXY
+        Uri: !Sub
+          - arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${lambdaArn}/invocations
+          - lambdaArn: !GetAtt MyDynoQueryLambdaFunction.Arn
+  MyRestApi:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: MyRestApiName
+      EndpointConfiguration:
+        Types:
+          - REGIONAL
+  MyApiGwDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn:
+      - MyApiMethod
+    Properties:
+      RestApiId: !Ref MyRestApi
+      StageName: stagename
+  MyLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+      Policies:
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Effect: Allow
+                Resource:
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/QueryLambdaFuncName:*
+                  - !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/PutLambdaFuncName:*
+          PolicyName: lambda2cw
+        - PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - dynamodb:*
+                Effect: Allow
+                Resource: 
+                  - !GetAtt MyDynamoTable.Arn
+          PolicyName: lambda2dynamo
+  LambdaApiGwInvokePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - MyRestApi
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !GetAtt MyDynoQueryLambdaFunction.Arn
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${MyRestApi}/stagename/POST/
+  MyDynoQueryLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt MyLambdaRole.Arn
+      MemorySize: 128
+      Runtime: python3.8
+      Handler: dynoquery.handler
+      FunctionName: QueryLambdaFuncName
+      Code: dynoquery.py
+  MyDynoPutLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Role: !GetAtt MyLambdaRole.Arn
+      MemorySize: 128
+      Runtime: python3.8
+      Handler: dynoput.handler
+      FunctionName: PutLambdaFuncName
+      Code: dynoput.py
+  MyDynamoTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: MyDynamoTableName
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: AttName
+          AttributeType: S
+      KeySchema:
+        - AttributeName: AttName
+          KeyType: HASH
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${MyDynoPutLambdaFunction}
+      RetentionInDays: 90
+  QueryLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /aws/lambda/${MyDynoQueryLambdaFunction}
+      RetentionInDays: 90
+  MyTestEventBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: lab-9-2-2-jdix-mytesteventbucket
+  MyCloudTrailBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      BucketName: lab-9-2-2-jdix-cloudtrail
+  MyCloudTrail:
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      EventSelectors:
+        - IncludeManagementEvents: False
+          ReadWriteType: WriteOnly
+          DataResources:
+            - Type: AWS::S3::Object
+              Values:
+                - !Join [ '', [ !GetAtt MyTestEventBucket.Arn, '/' ] ] 
+      CloudWatchLogsLogGroupArn: !GetAtt CwGroup.Arn
+      CloudWatchLogsRoleArn: !GetAtt CwGroupRole.Arn
+      IsLogging: true
+      S3BucketName: !Ref MyCloudTrailBucket
+  BucketPolicy: 
+    Type: AWS::S3::BucketPolicy
+    Properties: 
+      Bucket: 
+        Ref: MyCloudTrailBucket
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - 
+            Sid: "AWSCloudTrailAclCheck"
+            Effect: "Allow"
+            Principal: 
+              Service: "cloudtrail.amazonaws.com"
+            Action: "s3:GetBucketAcl"
+            Resource: 
+              !Sub |-
+                arn:aws:s3:::${MyCloudTrailBucket}
+          - 
+            Sid: "AWSCloudTrailWrite"
+            Effect: "Allow"
+            Principal: 
+              Service: "cloudtrail.amazonaws.com"
+            Action: "s3:PutObject"
+            Resource:
+              !Sub |-
+                arn:aws:s3:::${MyCloudTrailBucket}/AWSLogs/${AWS::AccountId}/*
+            Condition: 
+              StringEquals:
+                s3:x-amz-acl: "bucket-owner-full-control"
+  CwGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: josh.dix.c9logs
+  CwSubscriptionFilter:
+    DependsOn: LambdaCloudwatchInvokePermission
+    Type: AWS::Logs::SubscriptionFilter
+    Properties:
+      DestinationArn: !GetAtt MyDynoPutLambdaFunction.Arn
+      FilterPattern: " "
+      LogGroupName: !Ref CwGroup
+  CwGroupRole:
+    Type: 'AWS::IAM::Role'
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: AssumeRole1
+          Effect: Allow
+          Principal:
+            Service: 'cloudtrail.amazonaws.com'
+          Action: 'sts:AssumeRole'
+      Policies:
+      - PolicyName: 'cloudtrail-policy'
+        PolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+          - Effect: Allow
+            Action:
+            - 'logs:CreateLogStream'
+            - 'logs:PutLogEvents'
+            Resource: !GetAtt 'CwGroup.Arn'
+  LambdaCloudwatchInvokePermission:
+    Type: AWS::Lambda::Permission
+    DependsOn:
+      - MyDynoPutLambdaFunction
+    Properties:
+      FunctionName: PutLambdaFuncName
+      Principal: "logs.us-east-2.amazonaws.com"
+      Action: "lambda:InvokeFunction"
+      SourceArn: !Sub "arn:aws:logs:${AWS::Region}:${AWS::AccountId}:log-group:*"
+
+Outputs:
+  apiGatewayInvokeURL:
+    Value: !Sub https://${MyRestApi}.execute-api.${AWS::Region}.amazonaws.com/stagename
+  lambdaArn:
+    Value: !GetAtt MyDynoPutLambdaFunction.Arn
