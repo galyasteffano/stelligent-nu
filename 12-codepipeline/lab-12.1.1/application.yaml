@@ -1,0 +1,5 @@
+Resources:
+  ApplicationAsABucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: great-success-lab-12-1-1-jdix

@@ -1,0 +1,213 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: github-codepipeline
+
+Parameters:
+  GitHubOAuthToken:
+    Type: String
+    NoEcho: true
+    MinLength: 40
+    MaxLength: 40
+    AllowedPattern: '[a-z0-9]*'
+
+  GitHubOwner:
+    Type: String
+    Default: jdix531
+    AllowedPattern: "[A-Za-z0-9-]+"
+
+  GitHubRepo:
+    Type: String
+    Default: lab12
+    AllowedPattern: "[A-Za-z0-9-]+"
+
+  GitHubBranch:
+    Type: String
+    Default: main
+    AllowedPattern: "[A-Za-z0-9-]+"
+
+  ApplicationStackName:
+    Type: String
+    Default: lab12-app-stack-jdix
+    AllowedPattern: "[A-Za-z0-9-]+"
+
+Resources:
+  PipelineArtifactsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      VersioningConfiguration:
+        Status: Enabled
+  CodeBuildCacheBucket:
+    Type: AWS::S3::Bucket
+  CodeBuildProjectBuildPhase:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: 'aws/codebuild/amazonlinux2-x86_64-standard:3.0'
+        EnvironmentVariables:
+          - Name: varName1
+            Value: varValue1
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec_build.yaml
+      TimeoutInMinutes: 10
+      Cache:
+        Type: S3
+        Location: !Join [ '', [ !Ref CodeBuildCacheBucket, /build ] ]
+  CodeBuildProjectTestPhase:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !GetAtt CodeBuildRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        Type: LINUX_CONTAINER
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: 'aws/codebuild/amazonlinux2-x86_64-standard:3.0'
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec_test.yaml
+      TimeoutInMinutes: 10
+      Cache:
+        Type: S3
+        Location: !Join [ '', [ !Ref CodeBuildCacheBucket, /test ] ]
+  CodeBuildRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Action: ['sts:AssumeRole']
+          Effect: Allow
+          Principal:
+            Service: [codebuild.amazonaws.com]
+        Version: '2012-10-17'
+      Path: /
+      Policies:
+        - PolicyName: CodeBuildAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Action:
+                - 'logs:*'
+                - 's3:*'
+                - 'cloudformation:*'
+                Effect: Allow
+                Resource: '*'
+
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      ArtifactStore:
+        Type: S3
+        Location: !Ref PipelineArtifactsBucket
+      RestartExecutionOnUpdate: true
+      RoleArn: !GetAtt CodePipelineRole.Arn
+      Stages:
+        # get the source from github
+        - Name: Source
+          Actions:
+            - Name: Source
+              InputArtifacts: []
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: '1'
+                Provider: GitHub
+              OutputArtifacts:
+              - Name: SourceCode
+              Configuration:
+                Owner: !Ref GitHubOwner
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                PollForSourceChanges: false
+                OAuthToken: !Ref GitHubOAuthToken
+              RunOrder: 1
+        # build - 'run a validation of the stack yaml using the cli'
+        - Name: Build
+          Actions:
+            - Name: Build
+              InputArtifacts:
+                - Name: SourceCode
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectBuildPhase
+              RunOrder: 1
+        # Deploy the stack
+        - Name: Deploy
+          Actions:
+            - Name: CloudFormationDeploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CloudFormation
+                Version: '1'
+              InputArtifacts:
+                - Name: SourceCode
+              Configuration:
+                ActionMode: CREATE_UPDATE
+                Capabilities: CAPABILITY_NAMED_IAM
+                RoleArn: !GetAtt CloudformationRole.Arn
+                StackName: !Ref ApplicationStackName
+                TemplatePath: "SourceCode::application.yaml"
+              RunOrder: 1
+        # Test - 'check that the stack is healthy post deployment'
+        - Name: Test
+          Actions:
+            - Name: Build
+              InputArtifacts:
+                - Name: SourceCode
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: '1'
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProjectTestPhase
+              RunOrder: 1
+
+  GithubWebhook:
+    Type: 'AWS::CodePipeline::Webhook'
+    Properties:
+      Authentication: GITHUB_HMAC
+      AuthenticationConfiguration:
+        SecretToken: !Ref GitHubOAuthToken
+      RegisterWithThirdParty: true
+      Filters:
+      - JsonPath: "$.ref"
+        MatchEquals: refs/heads/{Branch}
+      TargetPipeline: !Ref CodePipeline
+      TargetAction: Source
+      TargetPipelineVersion: !GetAtt CodePipeline.Version
+
+  CodePipelineRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: codepipeline.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess #TODO: Reduce permissions
+
+  CloudformationRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          Effect: Allow
+          Principal:
+            Service: cloudformation.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess #TODO: Reduce permissions
